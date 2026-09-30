@@ -1,7 +1,10 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import 'firebase_options.dart';
+import 'services/firebase_service.dart';
 import 'providers/auth_provider.dart';
 import 'providers/report_provider.dart';
 import 'providers/candidate_provider.dart';
@@ -11,6 +14,17 @@ import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase backend (civicvoice-c476a)
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    // Seed initial collections if newly created database
+    await CivicFirebaseService.seedInitialDataIfEmpty();
+  } catch (e) {
+    debugPrint('Firebase initialization notice: $e (running with local cache fallback)');
+  }
 
   // Set system UI overlay style to match civic theme
   SystemChrome.setSystemUIOverlayStyle(

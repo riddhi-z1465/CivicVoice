@@ -86,6 +86,7 @@ class ReportProvider extends ChangeNotifier {
     double? latitude,
     double? longitude,
     String? imageUrl,
+    dynamic imageFile,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -101,6 +102,7 @@ class ReportProvider extends ChangeNotifier {
         latitude: latitude,
         longitude: longitude,
         imageUrl: imageUrl,
+        imageFile: imageFile,
       );
 
       _reports.insert(0, newReport);

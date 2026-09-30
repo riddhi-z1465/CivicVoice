@@ -1,8 +1,16 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'mock_data.dart';
+
 /// Firebase Architecture Service Guide & Firestore Integration Schema
 ///
-/// This class encapsulates the Firestore collection names, document paths,
-/// and Firebase Storage buckets used in the CivicVoice architecture.
-class FirebaseService {
+/// Encapsulates the Firestore collection names, document paths,
+/// Storage buckets, and initial database seeding for the CivicVoice project.
+class CivicFirebaseService {
+  // Project Credentials Reference: civicvoice-c476a
+  static const String projectId = 'civicvoice-c476a';
+  static const String storageBucket = 'civicvoice-c476a.firebasestorage.app';
+
   // Firestore Collections
   static const String colUsers = 'users';
   static const String colVoterInformation = 'voter_information';
@@ -14,50 +22,68 @@ class FirebaseService {
   static const String storageReportsFolder = 'issue_reports';
   static const String storageAvatarsFolder = 'user_avatars';
 
-  /// Document path helper for a specific user profile
-  static String userDocPath(String uid) => '$colUsers/$uid';
+  static FirebaseFirestore get firestore => FirebaseFirestore.instance;
 
-  /// Document path helper for a civic issue report
-  static String reportDocPath(String reportId) => '$colCivicReports/$reportId';
-
-  /// Document path helper for a polling booth
-  static String boothDocPath(String boothId) => '$colPollingBooths/$boothId';
-
-  /// Document path helper for candidate profile
-  static String candidateDocPath(String candidateId) => '$colCandidates/$candidateId';
-
-  /// Security rules checklist for reference
-  static const String securityRulesOverview = '''
-  rules_version = '2';
-  service cloud.firestore {
-    match /databases/{database}/documents {
-      // User Profiles
-      match /users/{userId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-      // Public Civic Information (Read-only for all, write for admin)
-      match /voter_information/{infoId} {
-        allow read: if true;
-        allow write: if false; // Managed via admin console
-      }
-      match /candidates/{candidateId} {
-        allow read: if true;
-        allow write: if false;
-      }
-      match /polling_booths/{boothId} {
-        allow read: if true;
-        allow write: if false;
-      }
-      // Citizen Reports (Citizens can create, view their own or ward public reports)
-      match /civic_reports/{reportId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-        allow update: if request.auth != null && (
-          resource.data.userId == request.auth.uid ||
-          request.auth.token.role == 'admin'
-        );
-      }
+  /// Check if Firebase has been initialized successfully
+  static bool get isInitialized {
+    try {
+      return Firebase.apps.isNotEmpty;
+    } catch (_) {
+      return false;
     }
   }
-  ''';
+
+  /// Helper to automatically populate Firestore with the initial civic baseline
+  /// records (Candidates, Voter Guides, Polling Booths) if the database is fresh.
+  static Future<void> seedInitialDataIfEmpty() async {
+    if (!isInitialized) return;
+
+    try {
+      // 1. Seed Candidates if empty
+      final candSnap = await firestore.collection(colCandidates).limit(1).get();
+      if (candSnap.docs.isEmpty) {
+        final batch = firestore.batch();
+        for (final candidate in MockData.getCandidates()) {
+          final docRef = firestore.collection(colCandidates).doc(candidate.id);
+          batch.set(docRef, candidate.toMap());
+        }
+        await batch.commit();
+      }
+
+      // 2. Seed Voter Information if empty
+      final voterSnap = await firestore.collection(colVoterInformation).limit(1).get();
+      if (voterSnap.docs.isEmpty) {
+        final batch = firestore.batch();
+        for (final guide in MockData.getVoterInformation()) {
+          final docRef = firestore.collection(colVoterInformation).doc(guide.id);
+          batch.set(docRef, guide.toMap());
+        }
+        await batch.commit();
+      }
+
+      // 3. Seed Polling Booths if empty
+      final boothSnap = await firestore.collection(colPollingBooths).limit(1).get();
+      if (boothSnap.docs.isEmpty) {
+        final batch = firestore.batch();
+        for (final booth in MockData.getPollingBooths()) {
+          final docRef = firestore.collection(colPollingBooths).doc(booth.id);
+          batch.set(docRef, booth.toMap());
+        }
+        await batch.commit();
+      }
+
+      // 4. Seed initial baseline reports if empty
+      final reportSnap = await firestore.collection(colCivicReports).limit(1).get();
+      if (reportSnap.docs.isEmpty) {
+        final batch = firestore.batch();
+        for (final report in MockData.getSampleReports()) {
+          final docRef = firestore.collection(colCivicReports).doc(report.id);
+          batch.set(docRef, report.toMap());
+        }
+        await batch.commit();
+      }
+    } catch (e) {
+      // Quietly ignore seeding errors (e.g. offline or strict security rules)
+    }
+  }
 }

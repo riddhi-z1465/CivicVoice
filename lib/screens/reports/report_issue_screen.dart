@@ -151,6 +151,7 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
       latitude: _latitude,
       longitude: _longitude,
       imageUrl: _selectedImage?.path,
+      imageFile: _selectedImage,
     );
 
     if (!mounted) return;
