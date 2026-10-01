@@ -4,9 +4,12 @@ import '../../models/polling_booth.dart';
 import '../../providers/booth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/formatters.dart';
-import '../../widgets/civic_card.dart';
+import '../../widgets/empty_state.dart';
 import '../../widgets/info_banner.dart';
 import '../../widgets/map_placeholder_widget.dart';
+import '../../widgets/polling_booth_card.dart';
+import '../../widgets/search_field.dart';
+import '../../widgets/section_header.dart';
 import 'booth_detail_screen.dart';
 
 class PollingBoothScreen extends StatefulWidget {
@@ -38,7 +41,7 @@ class _PollingBoothScreenState extends State<PollingBoothScreen> {
       builder: (ctx) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,78 +51,78 @@ class _PollingBoothScreenState extends State<PollingBoothScreen> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppTheme.accentGreenLight,
+                        color: AppColors.secondaryContainer,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.directions, color: AppTheme.accentGreen, size: 24),
+                      child: const Icon(Icons.directions, color: AppColors.secondaryDark, size: 22),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Directions to ${booth.boothNumber}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
+                            style: AppTextStyles.cardTitle,
                           ),
                           Text(
                             booth.name,
-                            style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                            style: AppTextStyles.supporting,
                           ),
                         ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.md),
                 const Divider(),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.sm),
                 Row(
                   children: [
-                    const Icon(Icons.pin_drop, size: 16, color: AppTheme.primaryNavy),
-                    const SizedBox(width: 8),
+                    const Icon(Icons.place_outlined, size: 16, color: AppColors.primaryNavy),
+                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
                         booth.address,
-                        style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                        style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                       ),
                     ),
                   ],
                 ),
                 if (booth.landmark.isNotEmpty) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.xs + 2),
                   Row(
                     children: [
-                      const Icon(Icons.flag_outlined, size: 16, color: AppTheme.accentAmber),
-                      const SizedBox(width: 8),
+                      const Icon(Icons.flag_outlined, size: 16, color: AppColors.warningAmber),
+                      const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Text(
                           'Landmark: ${booth.landmark}',
-                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                          style: AppTextStyles.supporting,
                         ),
                       ),
                     ],
                   ),
                 ],
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.sm + 2),
                 Row(
                   children: [
-                    const Icon(Icons.straighten, size: 16, color: AppTheme.textMuted),
-                    const SizedBox(width: 8),
+                    const Icon(Icons.straighten, size: 16, color: AppColors.textMuted),
+                    const SizedBox(width: AppSpacing.sm),
                     Text(
                       'Distance: ${Formatters.formatDistance(booth.distanceKm)} (~${(booth.distanceKm * 12).round()} min walk)',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
+                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSpacing.lg),
                 FilledButton(
                   onPressed: () {
                     Navigator.pop(ctx);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Simulated routing navigation to ${booth.name}. In production, launches GPS map provider.'),
-                        duration: const Duration(seconds: 3),
+                        content: Text('Simulated routing navigation to ${booth.name}.'),
+                        duration: const Duration(seconds: 2),
                       ),
                     );
                   },
@@ -137,7 +140,6 @@ class _PollingBoothScreenState extends State<PollingBoothScreen> {
   Widget build(BuildContext context) {
     final boothProv = Provider.of<BoothProvider>(context);
 
-    // Apply secondary filters
     final filteredBooths = boothProv.booths.where((b) {
       if (_onlyWheelchair && !b.wheelchairAccessible) return false;
       if (_onlyCloseProximity && b.distanceKm > 2.0) return false;
@@ -146,32 +148,20 @@ class _PollingBoothScreenState extends State<PollingBoothScreen> {
 
     final content = Column(
       children: [
-        // Location Search, Filter and View Mode Switcher
+        // Top Search and View Switcher Header
         Container(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
-          color: AppTheme.surfaceWhite,
+          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.sm),
+          color: AppColors.surfaceWhite,
           child: Column(
             children: [
-              TextField(
+              CivicSearchField(
                 controller: _searchController,
+                hintText: 'Search polling station, address, or ward...',
                 onChanged: (val) => boothProv.setSearchQuery(val),
-                decoration: InputDecoration(
-                  hintText: 'Search polling station, address, or ward...',
-                  prefixIcon: const Icon(Icons.search, size: 20, color: AppTheme.textMuted),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, size: 18),
-                          onPressed: () {
-                            _searchController.clear();
-                            boothProv.setSearchQuery('');
-                          },
-                        )
-                      : null,
-                ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.sm),
 
-              // Segmented Control: List View vs Map View
+              // View Mode Toggle (List View vs Map View) & Filters
               Row(
                 children: [
                   Expanded(
@@ -202,9 +192,9 @@ class _PollingBoothScreenState extends State<PollingBoothScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.xs + 2),
 
-              // Quick Filter Chips (Wheelchair, < 2 km)
+              // Quick Filter Chips
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -219,18 +209,20 @@ class _PollingBoothScreenState extends State<PollingBoothScreen> {
                         });
                       },
                       showCheckmark: false,
-                      backgroundColor: AppTheme.surfaceMuted,
-                      selectedColor: AppTheme.primaryNavy,
+                      backgroundColor: AppColors.surfaceMuted,
+                      selectedColor: AppColors.primaryContainer,
                       labelStyle: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: (!_onlyWheelchair && !_onlyCloseProximity) ? Colors.white : AppTheme.textSecondary,
+                        color: (!_onlyWheelchair && !_onlyCloseProximity)
+                            ? AppColors.primaryNavy
+                            : AppColors.textSecondary,
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: AppSpacing.xs),
                     FilterChip(
-                      avatar: const Icon(Icons.accessible, size: 14),
+                      avatar: const Icon(Icons.accessible, size: 13),
                       label: const Text('Wheelchair Accessible'),
                       selected: _onlyWheelchair,
                       onSelected: (val) {
@@ -239,18 +231,18 @@ class _PollingBoothScreenState extends State<PollingBoothScreen> {
                         });
                       },
                       showCheckmark: false,
-                      backgroundColor: AppTheme.surfaceMuted,
-                      selectedColor: AppTheme.primaryNavy,
+                      backgroundColor: AppColors.surfaceMuted,
+                      selectedColor: AppColors.primaryContainer,
                       labelStyle: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: _onlyWheelchair ? Colors.white : AppTheme.textSecondary,
+                        color: _onlyWheelchair ? AppColors.primaryNavy : AppColors.textSecondary,
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: AppSpacing.xs),
                     FilterChip(
-                      avatar: const Icon(Icons.near_me_outlined, size: 14),
+                      avatar: const Icon(Icons.near_me_outlined, size: 13),
                       label: const Text('Within 2 km'),
                       selected: _onlyCloseProximity,
                       onSelected: (val) {
@@ -259,12 +251,12 @@ class _PollingBoothScreenState extends State<PollingBoothScreen> {
                         });
                       },
                       showCheckmark: false,
-                      backgroundColor: AppTheme.surfaceMuted,
-                      selectedColor: AppTheme.primaryNavy,
+                      backgroundColor: AppColors.surfaceMuted,
+                      selectedColor: AppColors.primaryContainer,
                       labelStyle: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: _onlyCloseProximity ? Colors.white : AppTheme.textSecondary,
+                        color: _onlyCloseProximity ? AppColors.primaryNavy : AppColors.textSecondary,
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                     ),
@@ -299,50 +291,52 @@ class _PollingBoothScreenState extends State<PollingBoothScreen> {
                   : RefreshIndicator(
                       onRefresh: () => boothProv.loadBooths(),
                       child: ListView(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
                         children: [
                           const InfoBanner(
                             text:
-                                'Notice: Polling locations shown are sample educational data for project evaluation. On actual polling day, verify your designated booth on the official voter slip.',
+                                'Notice: Booth locations shown are sample educational data for project evaluation. Verify your assigned station on your official voter slip.',
                             type: BannerType.sampleData,
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: AppSpacing.md),
 
                           if (filteredBooths.isEmpty)
-                            Container(
-                              padding: const EdgeInsets.all(32),
-                              alignment: Alignment.center,
-                              child: const Column(
-                                children: [
-                                  Icon(Icons.location_off_outlined, size: 40, color: AppTheme.textMuted),
-                                  SizedBox(height: 10),
-                                  Text(
-                                    'No polling booths found',
-                                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textSecondary),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text('Try clearing the active filters or search terms',
-                                      style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                                ],
-                              ),
+                            EmptyState(
+                              icon: Icons.location_off_outlined,
+                              title: 'No polling booths found',
+                              description: 'Try clearing active filters or modifying search keywords.',
+                              actionLabel: 'Reset Filters',
+                              onAction: () {
+                                setState(() {
+                                  _onlyWheelchair = false;
+                                  _onlyCloseProximity = false;
+                                  _searchController.clear();
+                                  boothProv.setSearchQuery('');
+                                });
+                              },
                             )
                           else ...[
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Designated Stations (${filteredBooths.length})',
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
-                                ),
-                                const Text(
-                                  'Sorted by nearest first',
-                                  style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
-                                ),
-                              ],
+                            SectionHeader(
+                              title: 'Nearby Polling Booths',
+                              subtitle: '${filteredBooths.length} stations found • Sorted by nearest',
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: AppSpacing.xs),
 
-                            ...filteredBooths.map((booth) => _buildBoothCard(context, booth)),
+                            ...filteredBooths.map((booth) => Padding(
+                                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                                  child: PollingBoothCard(
+                                    booth: booth,
+                                    onDetailsTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => BoothDetailScreen(booth: booth),
+                                        ),
+                                      );
+                                    },
+                                    onDirectionsTap: () => _showDirectionsModal(context, booth),
+                                  ),
+                                )),
                           ],
                         ],
                       ),
@@ -356,173 +350,15 @@ class _PollingBoothScreenState extends State<PollingBoothScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Polling Booth Locator'),
+        title: const Text('Polling Booths'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppTheme.borderSubtle, height: 1),
+          child: Container(color: AppColors.borderSubtle, height: 1),
         ),
       ),
       body: SafeArea(child: content),
-    );
-  }
-
-  Widget _buildBoothCard(BuildContext context, PollingBooth booth) {
-    final walkMinutes = (booth.distanceKm * 12).round();
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: CivicCard(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Booth Header: Booth Number and Name
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryNavy.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Icon(Icons.where_to_vote, size: 20, color: AppTheme.primaryNavy),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            booth.boothNumber,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.primaryNavy,
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppTheme.accentGreenLight,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              Formatters.formatDistance(booth.distanceKm),
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.accentGreen,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        booth.name,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        booth.address,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            // Distance & Accessibility Badges
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceMuted,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.directions_walk, size: 12, color: AppTheme.textSecondary),
-                      const SizedBox(width: 3),
-                      Text('~$walkMinutes min walk', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.textSecondary)),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (booth.wheelchairAccessible)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppTheme.surfaceMuted,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: AppTheme.borderSubtle),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.accessible, size: 12, color: AppTheme.textSecondary),
-                        SizedBox(width: 4),
-                        Text('Wheelchair Ramp', style: TextStyle(fontSize: 10, color: AppTheme.textSecondary)),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 10),
-
-            // Action Buttons: View Details & Directions
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                OutlinedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => BoothDetailScreen(booth: booth)),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                  ),
-                  child: const Text('View Details'),
-                ),
-                const SizedBox(width: 8),
-                FilledButton.icon(
-                  onPressed: () => _showDirectionsModal(context, booth),
-                  icon: const Icon(Icons.directions, size: 14),
-                  label: const Text('Directions', style: TextStyle(fontSize: 12)),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

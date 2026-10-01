@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
+    // Helper functions for authentication and role verification
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -11,34 +11,56 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // 1. Citizen User Profiles
-    match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow write: if isOwner(userId);
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    // 2. Voter Information & Guidelines (Public Read, Admin Write)
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'admin' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         getUserData().role == 'admin')
+      );
+    }
+
+    // 1. Citizen & Authority User Profiles
+    // users/{uid}: name, email, phone, role, createdAt
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && (
+        (isOwner(userId) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']))) ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 2. Voter Information & Guidelines (Public Read, Authority Write)
     match /voter_information/{infoId} {
       allow read: if true;
-      allow write: if isAuthenticated() && request.auth.token.role == 'admin';
+      allow write: if isAdmin();
     }
 
-    // 3. Candidate Profiles (Public Read, Admin Write)
+    // 3. Candidate Profiles (Public Read, Authority Write)
     match /candidates/{candidateId} {
       allow read: if true;
-      allow write: if isAuthenticated() && request.auth.token.role == 'admin';
+      allow write: if isAdmin();
     }
 
-    // 4. Polling Booth Locations (Public Read, Admin Write)
+    // 4. Polling Booth Locations (Public Read, Authority Write)
     match /polling_booths/{boothId} {
       allow read: if true;
-      allow write: if isAuthenticated() && request.auth.token.role == 'admin';
+      allow write: if isAdmin();
     }
 
     // 5. Civic Issue Reports
+    // civic_reports/{reportId}: userId, title, category, description, location, imageUrl, status, createdAt, updatedAt
     match /civic_reports/{reportId} {
-      // Any authenticated citizen can view reports in their area
-      allow read: if isAuthenticated();
+      // Citizens can read only their own reports; Admins can read all reports
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
       
       // Citizens can only create reports tagged with their own user ID
       allow create: if isAuthenticated() && 
@@ -46,13 +68,15 @@ service cloud.firestore {
                     request.resource.data.title is string &&
                     request.resource.data.category is string;
 
-      // Only the author or an administrative municipal officer can update
+      // Admins can manage report status and updates; citizens cannot modify administrative status
       allow update: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid ||
-        request.auth.token.role == 'admin'
+        isAdmin() ||
+        (resource.data.userId == request.auth.uid &&
+         resource.data.status == 'Submitted' &&
+         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'statusHistory']))
       );
       
-      allow delete: if isAuthenticated() && request.auth.token.role == 'admin';
+      allow delete: if isAdmin();
     }
   }
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
-import '../../utils/formatters.dart';
+import '../../widgets/civic_logo.dart';
 import '../auth/login_screen.dart';
 import 'edit_profile_dialog.dart';
 
@@ -14,11 +14,11 @@ class ProfileScreen extends StatelessWidget {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: const Text('Confirm Logout', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
           content: const Text(
             'Are you sure you want to end your citizen session on CivicVoice?',
-            style: TextStyle(fontSize: 13),
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
           ),
           actions: [
             TextButton(
@@ -39,7 +39,7 @@ class ProfileScreen extends StatelessWidget {
                 }
               },
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFDC2626),
+                backgroundColor: AppColors.errorRed,
               ),
               child: const Text('Logout'),
             ),
@@ -58,7 +58,7 @@ class ProfileScreen extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               title: const Text('Notification Preferences', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -104,15 +104,15 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        title: const Text('Citizen Privacy & Data Protection', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text('Privacy Policy', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
         content: const SingleChildScrollView(
           child: Text(
-            'CivicVoice complies with academic guidelines for civic technology prototypes.\n\n'
-            '• Personal credentials and mobile numbers are restricted to authentication verification.\n'
-            '• Issue reports are submitted to municipal ward rosters with citizen masking where requested.\n'
+            'CivicVoice complies with guidelines for civic utility systems.\n\n'
+            '• Personal credentials and mobile numbers are restricted to identity authentication.\n'
+            '• Issue reports are submitted to municipal ward rosters with citizen protection.\n'
             '• No proprietary user tracking or third-party advertising analytics are executed in this application.',
-            style: TextStyle(fontSize: 12, height: 1.4, color: AppTheme.textSecondary),
+            style: TextStyle(fontSize: 12, height: 1.4, color: AppColors.textSecondary),
           ),
         ),
         actions: [
@@ -129,8 +129,8 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        title: const Text('Civic Help & Support', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text('Help & FAQ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,10 +138,44 @@ class ProfileScreen extends StatelessWidget {
             Text('Official Electoral Helpline: 1950 (National)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
             SizedBox(height: 4),
             Text('Municipal Emergency Grievance: 1913', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            SizedBox(height: 10),
+            Text(
+              'Technical Support: For reporting issues, verify network status or use local offline simulation.',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.35),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAboutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(height: 8),
+            CivicLogo(size: 48, showText: true, subtitle: 'Civic Services Made Accessible'),
+            SizedBox(height: 14),
+            Text(
+              'CivicVoice is a public-service mobile application designed to empower citizens with accessible voter guidance, transparent candidate profiles, designated polling booth locators, and localized municipal grievance reporting.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary, height: 1.4),
+            ),
             SizedBox(height: 12),
             Text(
-              'Technical Support: If you encounter an issue filing reports in the prototype, check network status or use the sample offline simulation features.',
-              style: TextStyle(fontSize: 12, color: AppTheme.textSecondary, height: 1.35),
+              'Version 1.0.0 • College Project Prototype',
+              style: TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w500),
             ),
           ],
         ),
@@ -160,236 +194,157 @@ class ProfileScreen extends StatelessWidget {
     final auth = Provider.of<AuthProvider>(context);
     final user = auth.user;
 
-    final initials = user?.name
-            .split(' ')
-            .where((p) => p.isNotEmpty)
-            .map((p) => p[0])
-            .take(2)
-            .join() ??
-        'CP';
+    final userName = user?.name ?? 'Riddhi Zunjarrao';
+    final userEmail = user?.email ?? 'riddhi@example.com';
+
+    final initials = userName
+        .split(' ')
+        .where((p) => p.isNotEmpty)
+        .map((p) => p[0])
+        .take(2)
+        .join();
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Citizen Profile'),
+        title: const Text('Profile'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppTheme.borderSubtle, height: 1),
+          child: Container(color: AppColors.borderSubtle, height: 1),
         ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xl),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Digital Citizen ID Card Layout
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceWhite,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.borderSubtle),
-                  boxShadow: AppTheme.cardShadow,
+              // 1. Profile Avatar
+              Center(
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryContainer,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.borderMedium, width: 1.5),
+                  ),
+                  child: Center(
+                    child: Text(
+                      initials.isNotEmpty ? initials : 'RZ',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryNavy,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // 2. Citizen Name & Email
+              Text(
+                userName,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                userEmail,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.supporting,
+              ),
+              const SizedBox(height: AppSpacing.xxl),
+
+              // 3. Account Section
+              _buildSectionTitle('Account'),
+              const SizedBox(height: AppSpacing.xs),
+              Material(
+                color: AppColors.surfaceWhite,
+                borderRadius: BorderRadius.circular(10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  side: const BorderSide(color: AppColors.borderSubtle),
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(5),
-                              decoration: BoxDecoration(
-                                color: AppTheme.primaryNavy,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Icon(Icons.badge, size: 14, color: Colors.white),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'DIGITAL ELECTORAL CREDENTIAL',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.primaryNavy,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppTheme.accentGreenLight,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.check_circle, size: 11, color: AppTheme.accentGreen),
-                              SizedBox(width: 4),
-                              Text(
-                                'VERIFIED',
-                                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: AppTheme.accentGreen),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                    _buildSettingsTile(
+                      icon: Icons.person_outline,
+                      title: 'Edit Profile',
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => const EditProfileDialog(),
+                        );
+                      },
                     ),
-                    const SizedBox(height: 14),
-
-                    Row(
-                      children: [
-                        Container(
-                          width: 58,
-                          height: 58,
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryNavy,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Center(
-                            child: Text(
-                              initials,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                user?.name ?? 'Registered Citizen',
-                                style: const TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                user?.email ?? 'citizen@civicvoice.org',
-                                style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                user?.phone.isNotEmpty == true ? '+91 ${user!.phone}' : '+91 9876543210',
-                                style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
                     const Divider(height: 1),
-                    const SizedBox(height: 12),
-
-                    // Electoral details
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _idCardDetail(label: 'Voter ID (EPIC)', value: user?.epicNumber ?? 'EPIC-904128'),
-                        _idCardDetail(label: 'Constituency', value: user?.constituency ?? 'Ward 12'),
-                        _idCardDetail(label: 'Registered', value: Formatters.formatDate(user?.registeredAt)),
-                      ],
+                    _buildSettingsTile(
+                      icon: Icons.notifications_none_outlined,
+                      title: 'Notifications',
+                      onTap: () => _showNotificationSettings(context),
+                    ),
+                    const Divider(height: 1),
+                    _buildSettingsTile(
+                      icon: Icons.lock_outline,
+                      title: 'Privacy',
+                      onTap: () => _showPrivacyInfo(context),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.xl),
 
-              // Account Actions
-              const Text(
-                'Settings & Preferences',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-
+              // 4. Support Section
+              _buildSectionTitle('Support'),
+              const SizedBox(height: AppSpacing.xs),
               Material(
-                color: AppTheme.surfaceWhite,
-                borderRadius: BorderRadius.circular(8),
-                clipBehavior: Clip.antiAlias,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.borderSubtle),
-                    boxShadow: AppTheme.subtleShadow,
-                  ),
-                  child: Column(
-                    children: [
-                      _actionTile(
-                        icon: Icons.edit_outlined,
-                        title: 'Edit Citizen Profile',
-                        subtitle: 'Update name, mobile, and residential ward',
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (_) => const EditProfileDialog(),
-                          );
-                        },
-                      ),
-                      const Divider(height: 1),
-                      _actionTile(
-                        icon: Icons.notifications_none_outlined,
-                        title: 'Notification Settings',
-                        subtitle: 'Status change alerts and polling notifications',
-                        onTap: () => _showNotificationSettings(context),
-                      ),
-                      const Divider(height: 1),
-                      _actionTile(
-                        icon: Icons.lock_outline,
-                        title: 'Citizen Privacy & Data Protection',
-                        subtitle: 'Masking of public records & grievance log policy',
-                        onTap: () => _showPrivacyInfo(context),
-                      ),
-                      const Divider(height: 1),
-                      _actionTile(
-                        icon: Icons.help_outline,
-                        title: 'Help, FAQ & Official Hotlines',
-                        subtitle: 'Toll-free 1950 and Ward 12 emergency numbers',
-                        onTap: () => _showHelpDialog(context),
-                      ),
-                    ],
+                color: AppColors.surfaceWhite,
+                borderRadius: BorderRadius.circular(10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  side: const BorderSide(color: AppColors.borderSubtle),
+                ),
+                child: Column(
+                  children: [
+                    _buildSettingsTile(
+                      icon: Icons.help_outline,
+                      title: 'Help & FAQ',
+                      onTap: () => _showHelpDialog(context),
+                    ),
+                    const Divider(height: 1),
+                    _buildSettingsTile(
+                      icon: Icons.info_outline,
+                      title: 'About CivicVoice',
+                      onTap: () => _showAboutDialog(context),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xxl),
+
+              // 5. Logout Button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _showLogoutConfirmation(context),
+                  icon: const Icon(Icons.logout, size: 16, color: AppColors.errorRed),
+                  label: const Text('Logout', style: TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.w600)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.errorBorder),
+                    backgroundColor: AppColors.errorBg,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    minimumSize: const Size(0, 44),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-
-              // Logout Button
-              OutlinedButton.icon(
-                onPressed: () => _showLogoutConfirmation(context),
-                icon: const Icon(Icons.logout, size: 16, color: Color(0xFFDC2626)),
-                label: const Text('Sign Out from CivicVoice', style: TextStyle(color: Color(0xFFDC2626))),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFFFECACA)),
-                  backgroundColor: const Color(0xFFFEF2F2),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Academic Information Tag
-              const Center(
-                child: Text(
-                  'CivicVoice v1.0.0 • College Project Prototype',
-                  style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
-                ),
-              ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xxl),
             ],
           ),
         ),
@@ -397,29 +352,42 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _idCardDetail({required String label, required String value}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 10, color: AppTheme.textMuted)),
-        const SizedBox(height: 2),
-        Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
-      ],
+  Widget _buildSectionTitle(String title) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 2, bottom: 4),
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _actionTile({
+  Widget _buildSettingsTile({
     required IconData icon,
     required String title,
-    required String subtitle,
     required VoidCallback onTap,
   }) {
     return ListTile(
-      leading: Icon(icon, size: 20, color: AppTheme.primaryNavy),
-      title: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
-      trailing: const Icon(Icons.chevron_right, size: 18, color: AppTheme.textMuted),
+      leading: Icon(icon, size: 19, color: AppColors.primaryNavy),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: AppColors.textPrimary,
+        ),
+      ),
+      trailing: const Icon(Icons.chevron_right, size: 17, color: AppColors.textMuted),
       onTap: onTap,
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 0),
     );
   }
 }

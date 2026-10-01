@@ -1,57 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../models/civic_report.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/report_provider.dart';
 import '../../theme/app_theme.dart';
-import '../../utils/formatters.dart';
-import '../../widgets/civic_card.dart';
-import '../../widgets/status_chip.dart';
+import '../../widgets/citizen_report_card.dart';
+import '../../widgets/empty_state.dart';
 import 'report_detail_screen.dart';
 import 'report_issue_screen.dart';
 
 class MyReportsScreen extends StatelessWidget {
   const MyReportsScreen({super.key});
 
-  IconData _getCategoryIcon(String category) {
-    switch (category.toLowerCase()) {
-      case 'street light':
-        return Icons.lightbulb_outline;
-      case 'road':
-        return Icons.add_road_outlined;
-      case 'garbage':
-        return Icons.delete_outline;
-      case 'water supply':
-        return Icons.water_drop_outlined;
-      case 'public safety':
-        return Icons.security_outlined;
-      case 'drainage':
-        return Icons.waves_outlined;
-      case 'traffic':
-        return Icons.traffic_outlined;
-      default:
-        return Icons.report_problem_outlined;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
     final reportProv = Provider.of<ReportProvider>(context);
+    final citizenId = auth.user?.uid;
 
-    final totalCount = reportProv.allReports.length;
-    final activeCount = reportProv.allReports
+    final allMyReports = reportProv.getCitizenReports(citizenId, statusFilter: 'All');
+    final filteredMyReports = reportProv.getCitizenReports(citizenId);
+
+    final totalCount = allMyReports.length;
+    final activeCount = allMyReports
         .where((r) => r.status != 'Resolved' && r.status != 'Closed')
         .length;
-    final resolvedCount = reportProv.allReports
+    final resolvedCount = allMyReports
         .where((r) => r.status == 'Resolved' || r.status == 'Closed')
         .length;
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('My Civic Reports'),
+        title: const Text('My Reports'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppTheme.borderSubtle, height: 1),
+          child: Container(color: AppColors.borderSubtle, height: 1),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -61,62 +44,62 @@ class MyReportsScreen extends StatelessWidget {
             MaterialPageRoute(builder: (_) => const ReportIssueScreen()),
           );
         },
-        backgroundColor: AppTheme.primaryNavy,
+        backgroundColor: AppColors.primaryNavy,
         foregroundColor: Colors.white,
-        icon: const Icon(Icons.add, size: 20),
-        label: const Text('Report Issue', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+        icon: const Icon(Icons.add, size: 18),
+        label: const Text('Report an Issue', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
       ),
       body: SafeArea(
         child: Column(
           children: [
             // Grievance Summary Counters Strip
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-              color: AppTheme.surfaceWhite,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+              color: AppColors.surfaceWhite,
               child: Row(
                 children: [
-                  _summaryPill(label: 'Total', count: totalCount, color: AppTheme.primaryNavy),
-                  const SizedBox(width: 8),
-                  _summaryPill(label: 'Active', count: activeCount, color: const Color(0xFFD97706)),
-                  const SizedBox(width: 8),
-                  _summaryPill(label: 'Resolved', count: resolvedCount, color: AppTheme.accentGreen),
+                  _summaryPill(label: 'Total', count: totalCount, color: AppColors.primaryNavy),
+                  const SizedBox(width: AppSpacing.sm),
+                  _summaryPill(label: 'Active', count: activeCount, color: AppColors.warningAmber),
+                  const SizedBox(width: AppSpacing.sm),
+                  _summaryPill(label: 'Resolved', count: resolvedCount, color: AppColors.secondaryTeal),
                 ],
               ),
             ),
             const Divider(height: 1),
 
-            // Filter Chips Bar
+            // Filter Chips Bar (All | Submitted | Under Review | In Progress | Resolved)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              color: AppTheme.surfaceWhite,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+              color: AppColors.surfaceWhite,
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
                     _buildFilterChip(
-                      label: 'All Reports',
+                      label: 'All',
                       isSelected: reportProv.selectedStatusFilter == 'All',
                       onSelected: () => reportProv.setStatusFilter('All'),
                     ),
-                    const SizedBox(width: 8),
-                    _buildFilterChip(
-                      label: 'Active Issues',
-                      isSelected: reportProv.selectedStatusFilter == 'Active',
-                      onSelected: () => reportProv.setStatusFilter('Active'),
-                    ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.xs + 2),
                     _buildFilterChip(
                       label: 'Submitted',
                       isSelected: reportProv.selectedStatusFilter == 'Submitted',
                       onSelected: () => reportProv.setStatusFilter('Submitted'),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.xs + 2),
+                    _buildFilterChip(
+                      label: 'Under Review',
+                      isSelected: reportProv.selectedStatusFilter == 'Under Review',
+                      onSelected: () => reportProv.setStatusFilter('Under Review'),
+                    ),
+                    const SizedBox(width: AppSpacing.xs + 2),
                     _buildFilterChip(
                       label: 'In Progress',
                       isSelected: reportProv.selectedStatusFilter == 'In Progress',
                       onSelected: () => reportProv.setStatusFilter('In Progress'),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.xs + 2),
                     _buildFilterChip(
                       label: 'Resolved',
                       isSelected: reportProv.selectedStatusFilter == 'Resolved',
@@ -134,42 +117,39 @@ class MyReportsScreen extends StatelessWidget {
                   ? const Center(child: CircularProgressIndicator())
                   : RefreshIndicator(
                       onRefresh: () => reportProv.loadReports(),
-                      child: reportProv.reports.isEmpty
-                          ? Center(
-                              child: SingleChildScrollView(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                padding: const EdgeInsets.all(32),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(Icons.assignment_turned_in_outlined, size: 48, color: AppTheme.textMuted),
-                                    const SizedBox(height: 12),
-                                    const Text(
-                                      'No reports found.',
-                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    const Text(
-                                      'There are no civic grievances matching the selected filter criteria.',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    OutlinedButton(
-                                      onPressed: () => reportProv.setStatusFilter('All'),
-                                      child: const Text('Show All Reports'),
-                                    ),
-                                  ],
+                      child: filteredMyReports.isEmpty
+                          ? ListView(
+                              children: [
+                                const SizedBox(height: AppSpacing.xxl),
+                                EmptyState(
+                                  icon: Icons.assignment_outlined,
+                                  title: 'No reports yet',
+                                  description: 'Reports you submit will appear here.',
+                                  actionLabel: 'Report an Issue',
+                                  onAction: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => const ReportIssueScreen()),
+                                    );
+                                  },
                                 ),
-                              ),
+                              ],
                             )
                           : ListView.separated(
-                              padding: const EdgeInsets.fromLTRB(16, 14, 16, 80),
-                              itemCount: reportProv.reports.length,
-                              separatorBuilder: (context, index) => const SizedBox(height: 10),
+                              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 84),
+                              itemCount: filteredMyReports.length,
+                              separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm + 2),
                               itemBuilder: (context, index) {
-                                final report = reportProv.reports[index];
-                                return _buildReportCard(context, report);
+                                final report = filteredMyReports[index];
+                                return CitizenReportCard(
+                                  report: report,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => ReportDetailScreen(report: report)),
+                                    );
+                                  },
+                                );
                               },
                             ),
                     ),
@@ -184,9 +164,9 @@ class MyReportsScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceMuted,
+        color: AppColors.surfaceMuted,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppTheme.borderSubtle),
+        border: Border.all(color: AppColors.borderSubtle),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -196,10 +176,10 @@ class MyReportsScreen extends StatelessWidget {
             height: 7,
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 5),
           Text(
             '$label: $count',
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.textSecondary),
+            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -216,113 +196,19 @@ class MyReportsScreen extends StatelessWidget {
       selected: isSelected,
       onSelected: (_) => onSelected(),
       showCheckmark: false,
-      backgroundColor: AppTheme.surfaceMuted,
-      selectedColor: AppTheme.primaryNavy,
+      backgroundColor: AppColors.surfaceMuted,
+      selectedColor: AppColors.primaryContainer,
       labelStyle: TextStyle(
-        fontSize: 11,
-        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-        color: isSelected ? Colors.white : AppTheme.textSecondary,
+        fontSize: 11.5,
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+        color: isSelected ? AppColors.primaryNavy : AppColors.textSecondary,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(6),
         side: BorderSide(
-          color: isSelected ? AppTheme.primaryNavy : AppTheme.borderSubtle,
+          color: isSelected ? AppColors.borderMedium : AppColors.borderSubtle,
         ),
-      ),
-    );
-  }
-
-  Widget _buildReportCard(BuildContext context, CivicReport report) {
-    return CivicCard(
-      padding: const EdgeInsets.all(14),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => ReportDetailScreen(report: report)),
-        );
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Top Row: Category Icon + Title snippet + Status Chip
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryNavy.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Icon(_getCategoryIcon(report.category), size: 18, color: AppTheme.primaryNavy),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          report.id,
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.primaryNavy),
-                        ),
-                        StatusChip(status: report.status, compact: true),
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      report.title,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on_outlined, size: 12, color: AppTheme.textMuted),
-                        const SizedBox(width: 3),
-                        Expanded(
-                          child: Text(
-                            report.location,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Divider(height: 1),
-          const SizedBox(height: 8),
-
-          // Bottom: Date and arrow
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Logged on ${Formatters.formatDate(report.createdAt)}',
-                style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
-              ),
-              const Row(
-                children: [
-                  Text('Track Resolution', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.primaryNavy)),
-                  SizedBox(width: 2),
-                  Icon(Icons.chevron_right, size: 16, color: AppTheme.primaryNavy),
-                ],
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

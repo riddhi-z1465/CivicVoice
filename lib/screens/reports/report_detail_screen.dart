@@ -1,147 +1,55 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../models/civic_report.dart';
-import '../../providers/report_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/formatters.dart';
-import '../../widgets/status_chip.dart';
+import '../../widgets/location_map_widget.dart';
+import '../../widgets/section_header.dart';
+import '../../widgets/status_badge.dart';
 import '../../widgets/timeline_widget.dart';
 
-class ReportDetailScreen extends StatefulWidget {
+/// Citizen View of Report Details
+/// Strictly read-only for citizens — displays Report ID, Issue, Description,
+/// Location, Evidence Image, Submitted Date, and Status Timeline.
+/// Citizens cannot modify administrative status.
+class ReportDetailScreen extends StatelessWidget {
   final CivicReport report;
 
   const ReportDetailScreen({super.key, required this.report});
 
   @override
-  State<ReportDetailScreen> createState() => _ReportDetailScreenState();
-}
-
-class _ReportDetailScreenState extends State<ReportDetailScreen> {
-  late CivicReport _currentReport;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentReport = widget.report;
-  }
-
-  void _showStatusProgressionModal() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 18.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.science_outlined, size: 20, color: AppTheme.primaryNavy),
-                    SizedBox(width: 8),
-                    Text(
-                      'Viva Demo: Update Report Lifecycle',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Select a status stage to simulate municipal officer triage during project evaluation:',
-                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                ),
-                const SizedBox(height: 14),
-                const Divider(),
-                _statusOptionTile(
-                  status: 'Under Review',
-                  remarks: 'Assigned to Ward Junior Engineer for preliminary site survey.',
-                  ctx: ctx,
-                ),
-                _statusOptionTile(
-                  status: 'In Progress',
-                  remarks: 'Work order #WO-902 issued. Repair team mobilized on site.',
-                  ctx: ctx,
-                ),
-                _statusOptionTile(
-                  status: 'Resolved',
-                  remarks: 'Physical inspection completed. Grievance closed with citizen verification.',
-                  ctx: ctx,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _statusOptionTile({
-    required String status,
-    required String remarks,
-    required BuildContext ctx,
-  }) {
-    return ListTile(
-      leading: StatusChip(status: status, compact: true),
-      title: Text('Advance to $status', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-      subtitle: Text(remarks, style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
-      onTap: () async {
-        Navigator.pop(ctx);
-        final prov = Provider.of<ReportProvider>(context, listen: false);
-        final success = await prov.advanceStatus(_currentReport.id, status, remarks);
-        if (success && mounted) {
-          final updated = prov.allReports.firstWhere((r) => r.id == _currentReport.id);
-          setState(() {
-            _currentReport = updated;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Report ${_currentReport.id} transitioned to $status'),
-              backgroundColor: AppTheme.accentGreen,
-            ),
-          );
-        }
-      },
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(_currentReport.id),
+        title: Text(report.id),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.tune_outlined),
-            tooltip: 'Simulate Status Progression (Demo)',
-            onPressed: _showStatusProgressionModal,
+          Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.md),
+            child: StatusBadge(status: report.status, compact: true),
           ),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppTheme.borderSubtle, height: 1),
+          child: Container(color: AppColors.borderSubtle, height: 1),
         ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Card
+              // Report Header Card
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: AppTheme.surfaceWhite,
+                  color: AppColors.surfaceWhite,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppTheme.borderSubtle),
+                  border: Border.all(color: AppColors.borderSubtle),
+                  boxShadow: AppTheme.subtleShadow,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,44 +57,48 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppTheme.surfaceMuted,
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: AppTheme.borderSubtle),
-                          ),
-                          child: Text(
-                            _currentReport.category.toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.textSecondary,
-                              letterSpacing: 0.5,
-                            ),
+                        Text(
+                          report.id,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryNavy,
+                            letterSpacing: 0.3,
                           ),
                         ),
-                        StatusChip(status: _currentReport.status),
+                        StatusBadge(status: report.status, compact: true),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.sm),
                     Text(
-                      _currentReport.title,
+                      report.title,
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 17,
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.textPrimary,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.2,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 2),
+                    Text(
+                      report.category,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.secondaryTeal,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    const Divider(height: 1),
+                    const SizedBox(height: AppSpacing.sm),
                     Row(
                       children: [
-                        const Icon(Icons.location_on_outlined, size: 14, color: AppTheme.textMuted),
+                        const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMuted),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            _currentReport.location,
-                            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                            report.location,
+                            style: AppTextStyles.supporting,
                           ),
                         ),
                       ],
@@ -194,145 +106,176 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.calendar_today_outlined, size: 13, color: AppTheme.textMuted),
+                        const Icon(Icons.calendar_today_outlined, size: 13, color: AppColors.textMuted),
                         const SizedBox(width: 4),
                         Text(
-                          'Submitted on ${Formatters.formatDateTime(_currentReport.createdAt)}',
-                          style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                          'Submitted on ${Formatters.formatDateTime(report.createdAt)}',
+                          style: AppTextStyles.metadata,
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
 
-              // Description Card
-              const Text(
-                'Issue Description',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.textPrimary,
-                ),
+              // Resolution Progress Timeline (Step dots: Submitted -> Under Review -> In Progress -> Resolved)
+              const SectionHeader(
+                title: 'Status Timeline',
+                subtitle: 'Live municipal lifecycle progression',
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.xs),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: AppTheme.surfaceWhite,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.borderSubtle),
-                ),
-                child: Text(
-                  _currentReport.description,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppTheme.textSecondary,
-                    height: 1.45,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Attached Photo if available
-              if (_currentReport.imageUrl != null) ...[
-                const Text(
-                  'Attached Citizen Evidence',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceWhite,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.borderSubtle),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: kIsWeb || !_currentReport.imageUrl!.startsWith('/')
-                        ? Container(
-                            height: 180,
-                            color: AppTheme.surfaceMuted,
-                            child: const Center(
-                              child: Icon(Icons.image, size: 40, color: AppTheme.textMuted),
-                            ),
-                          )
-                        : Image.file(
-                            File(_currentReport.imageUrl!),
-                            height: 180,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              // Lifecycle Progress Timeline
-              const Text(
-                'Grievance Resolution Lifecycle',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceWhite,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.borderSubtle),
+                  color: AppColors.surfaceWhite,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.borderSubtle),
                 ),
                 child: ReportTimelineWidget(
-                  history: _currentReport.statusHistory,
-                  currentStatus: _currentReport.status,
+                  history: report.statusHistory,
+                  currentStatus: report.status,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.lg),
 
-              // Demo helper note
+              // Issue Description
+              const SectionHeader(
+                title: 'Issue Description',
+                subtitle: 'Submitted grievance summary',
+              ),
+              const SizedBox(height: AppSpacing.xs),
               Container(
-                padding: const EdgeInsets.all(12),
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: AppTheme.surfaceMuted,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: AppTheme.borderSubtle),
+                  color: AppColors.surfaceWhite,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.borderSubtle),
                 ),
-                child: Row(
+                child: Text(
+                  report.description.isNotEmpty
+                      ? report.description
+                      : 'No additional description provided.',
+                  style: AppTextStyles.body,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Incident Location & Mapping
+              const SectionHeader(
+                title: 'Location Details',
+                subtitle: 'Registered site of issue',
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceWhite,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.borderSubtle),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.info_outline, size: 16, color: AppTheme.textMuted),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Demo feature: Tap the settings icon in the top right to simulate lifecycle progression for viva presentation.',
-                        style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
-                      ),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on, size: 16, color: AppColors.errorRed),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            report.location,
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                          ),
+                        ),
+                      ],
                     ),
-                    TextButton(
-                      onPressed: _showStatusProgressionModal,
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: const Text('Update', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: AppSpacing.md),
+                    LocationMapWidget(
+                      latitude: report.latitude ?? 19.0760,
+                      longitude: report.longitude ?? 72.8777,
+                      locationName: report.location,
+                      height: 150,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Evidence Photo
+              const SectionHeader(
+                title: 'Evidence',
+                subtitle: 'Attached photo documentation',
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceWhite,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.borderSubtle),
+                ),
+                child: _buildEvidence(report.imageUrl),
+              ),
+              const SizedBox(height: AppSpacing.xxl),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEvidence(String? imageUrl) {
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      if (imageUrl.startsWith('http')) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(
+            imageUrl,
+            height: 180,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => _evidencePlaceholder(),
+          ),
+        );
+      } else if (!kIsWeb) {
+        final f = File(imageUrl);
+        if (f.existsSync()) {
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.file(
+              f,
+              height: 180,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          );
+        }
+      }
+    }
+    return _evidencePlaceholder();
+  }
+
+  Widget _evidencePlaceholder() {
+    return Container(
+      height: 100,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: AppColors.borderSubtle),
+      ),
+      child: const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.image_outlined, size: 24, color: AppColors.textMuted),
+            SizedBox(height: 4),
+            Text('No image attached to this report', style: AppTextStyles.metadata),
+          ],
         ),
       ),
     );

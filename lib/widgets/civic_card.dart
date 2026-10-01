@@ -3,7 +3,7 @@ import '../theme/app_theme.dart';
 
 /// Reusable civic surface card adhering to project design constraints:
 /// - 1px subtle border
-/// - 10-12px corner radius
+/// - 12-14px corner radius
 /// - Soft ambient shadow for depth
 /// - Natural spacing without floating neon or exaggerated effects
 class CivicCard extends StatelessWidget {
@@ -22,16 +22,16 @@ class CivicCard extends StatelessWidget {
     this.onTap,
     this.backgroundColor,
     this.border,
-    this.borderRadius = 10.0,
+    this.borderRadius = 12.0,
     this.hasShadow = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final cardDecoration = BoxDecoration(
-      color: backgroundColor ?? Colors.white,
+      color: backgroundColor ?? AppColors.surfaceWhite,
       borderRadius: BorderRadius.circular(borderRadius),
-      border: border ?? Border.all(color: AppTheme.borderSubtle, width: 1),
+      border: border ?? Border.all(color: AppColors.borderSubtle, width: 1),
       boxShadow: hasShadow ? AppTheme.subtleShadow : null,
     );
 

@@ -1,9 +1,10 @@
-/// Model representing an authenticated citizen user profile
+/// Model representing an authenticated user profile (citizen or civic authority admin)
 class UserProfile {
   final String uid;
   final String name;
   final String email;
   final String phone;
+  final String role; // 'citizen' or 'admin'
   final String? constituency;
   final String? epicNumber; // Electoral Photo Identity Card Number
   final DateTime registeredAt;
@@ -13,10 +14,14 @@ class UserProfile {
     required this.name,
     required this.email,
     required this.phone,
+    this.role = 'citizen',
     this.constituency,
     this.epicNumber,
     DateTime? registeredAt,
   }) : registeredAt = registeredAt ?? DateTime.now();
+
+  bool get isAdmin => role.toLowerCase() == 'admin';
+  bool get isCitizen => !isAdmin;
 
   factory UserProfile.fromMap(Map<String, dynamic> map, {String? id}) {
     return UserProfile(
@@ -24,6 +29,7 @@ class UserProfile {
       name: map['name'] ?? '',
       email: map['email'] ?? '',
       phone: map['phone'] ?? '',
+      role: map['role'] ?? 'citizen',
       constituency: map['constituency'],
       epicNumber: map['epicNumber'],
       registeredAt: map['registeredAt'] != null
@@ -40,6 +46,7 @@ class UserProfile {
       'name': name,
       'email': email,
       'phone': phone,
+      'role': role,
       'constituency': constituency,
       'epicNumber': epicNumber,
       'registeredAt': registeredAt.toIso8601String(),
@@ -47,17 +54,20 @@ class UserProfile {
   }
 
   UserProfile copyWith({
+    String? uid,
     String? name,
     String? email,
     String? phone,
+    String? role,
     String? constituency,
     String? epicNumber,
   }) {
     return UserProfile(
-      uid: uid,
+      uid: uid ?? this.uid,
       name: name ?? this.name,
       email: email ?? this.email,
       phone: phone ?? this.phone,
+      role: role ?? this.role,
       constituency: constituency ?? this.constituency,
       epicNumber: epicNumber ?? this.epicNumber,
       registeredAt: registeredAt,

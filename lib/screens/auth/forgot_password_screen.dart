@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/validators.dart';
+import '../../widgets/primary_button.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -38,7 +39,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(auth.errorMessage ?? 'Unable to send reset instructions.'),
-          backgroundColor: const Color(0xFFDC2626),
+          backgroundColor: AppColors.errorRed,
         ),
       );
     }
@@ -49,18 +50,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     final auth = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      backgroundColor: AppTheme.surfaceWhite,
+      backgroundColor: AppColors.surfaceWhite,
       appBar: AppBar(
         title: const Text('Reset Password'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppTheme.borderSubtle, height: 1),
+          child: Container(color: AppColors.borderSubtle, height: 1),
         ),
       ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl, vertical: AppSpacing.xl),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: _isSubmitted
@@ -72,35 +73,31 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           width: 56,
                           height: 56,
                           decoration: const BoxDecoration(
-                            color: AppTheme.accentGreenLight,
+                            color: AppColors.secondaryContainer,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.mark_email_read_outlined, color: AppTheme.accentGreen, size: 30),
+                          child: const Icon(Icons.mark_email_read_outlined, color: AppColors.secondaryDark, size: 28),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: AppSpacing.lg),
                         const Text(
                           'Reset Link Dispatched',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: AppTheme.textPrimary,
+                            color: AppColors.textPrimary,
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: AppSpacing.xs + 2),
                         Text(
                           'Password reset instructions have been forwarded to ${_emailController.text.trim()}. Please verify your inbox.',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppTheme.textSecondary,
-                            height: 1.4,
-                          ),
+                          style: AppTextStyles.supporting,
                         ),
-                        const SizedBox(height: 28),
-                        FilledButton(
+                        const SizedBox(height: AppSpacing.xl),
+                        PrimaryButton(
+                          label: 'Back to Sign In',
                           onPressed: () => Navigator.pop(context),
-                          child: const Text('Back to Sign In'),
                         ),
                       ],
                     )
@@ -114,46 +111,35 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
-                              color: AppTheme.textPrimary,
+                              color: AppColors.textPrimary,
+                              letterSpacing: -0.3,
                             ),
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 4),
                           const Text(
-                            'Enter your registered citizen email address. A secure recovery link will be sent.',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppTheme.textSecondary,
-                              height: 1.35,
-                            ),
+                            'Enter your registered citizen email address. A recovery link will be sent.',
+                            style: AppTextStyles.supporting,
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: AppSpacing.xl),
                           const Text(
                             'Registered Email Address',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: AppSpacing.xs),
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             validator: Validators.email,
                             decoration: const InputDecoration(
                               hintText: 'citizen@example.org',
-                              prefixIcon: Icon(Icons.email_outlined, size: 18, color: AppTheme.textMuted),
+                              prefixIcon: Icon(Icons.email_outlined, size: 18, color: AppColors.textMuted),
                             ),
                           ),
-                          const SizedBox(height: 24),
-                          FilledButton(
-                            onPressed: auth.isLoading ? null : _handleReset,
-                            child: auth.isLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                    ),
-                                  )
-                                : const Text('Send Reset Link'),
+                          const SizedBox(height: AppSpacing.xl),
+                          PrimaryButton(
+                            label: 'Send Reset Link',
+                            isLoading: auth.isLoading,
+                            onPressed: _handleReset,
                           ),
                         ],
                       ),

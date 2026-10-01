@@ -58,6 +58,39 @@ class ReportService {
     return list;
   }
 
+  /// Stream real-time reports from Cloud Firestore
+  Stream<List<CivicReport>> getReportsStream({String? userId}) {
+    if (CivicFirebaseService.isInitialized) {
+      Query<Map<String, dynamic>> query = _firestore
+          .collection(CivicFirebaseService.colCivicReports)
+          .orderBy('createdAt', descending: true);
+
+      if (userId != null && userId.isNotEmpty) {
+        query = query.where('userId', isEqualTo: userId);
+      }
+
+      return query.snapshots().map((snapshot) {
+        if (snapshot.docs.isNotEmpty) {
+          final cloudReports = snapshot.docs.map((doc) {
+            return CivicReport.fromMap(doc.data(), id: doc.id);
+          }).toList();
+
+          _localCache.clear();
+          _localCache.addAll(cloudReports);
+          return cloudReports;
+        } else {
+          final list = List<CivicReport>.from(_localCache);
+          list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return list;
+        }
+      });
+    }
+
+    final list = List<CivicReport>.from(_localCache);
+    list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return Stream.value(list);
+  }
+
   /// Submit a new civic issue report with optional image upload to Firebase Storage
   Future<CivicReport> submitReport({
     required String userId,

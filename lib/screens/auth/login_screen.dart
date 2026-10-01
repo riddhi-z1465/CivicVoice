@@ -3,9 +3,12 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/validators.dart';
+import '../../widgets/app_button.dart';
+import '../../widgets/civic_logo.dart';
+import '../admin/admin_navigation.dart';
 import '../main_navigation_screen.dart';
-import 'register_screen.dart';
 import 'forgot_password_screen.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -39,24 +42,31 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (success) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
-      );
+      if (auth.isAdmin) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminNavigation()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const CitizenNavigation()),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(auth.errorMessage ?? 'Authentication failed. Please check credentials.'),
-          backgroundColor: const Color(0xFFDC2626),
+          content: Text(auth.errorMessage ?? 'Authentication failed. Please verify credentials.'),
+          backgroundColor: AppColors.errorRed,
         ),
       );
     }
   }
 
-  void _fillSampleCredentials() {
+  void _fillCredentials(String email, String password) {
     setState(() {
-      _emailController.text = 'citizen@civicvoice.org';
-      _passwordController.text = 'password123';
+      _emailController.text = email;
+      _passwordController.text = password;
     });
   }
 
@@ -65,11 +75,11 @@ class _LoginScreenState extends State<LoginScreen> {
     final auth = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      backgroundColor: AppTheme.surfaceWhite,
+      backgroundColor: AppColors.surfaceWhite,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl, vertical: AppSpacing.xl),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: Form(
@@ -77,98 +87,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Emblem Header
-                    Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryNavy,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.how_to_vote, color: Colors.white, size: 24),
-                        ),
-                        const SizedBox(width: 12),
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'CivicVoice',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.primaryNavy,
-                              ),
-                            ),
-                            Text(
-                              'Citizen Portal',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppTheme.textMuted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-
-                    const Text(
-                      'Citizen Login',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textPrimary,
+                    // Brand Header
+                    const Center(
+                      child: CivicLogo(
+                        size: 58,
+                        showText: true,
+                        subtitle: 'Civic Services Made Accessible',
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Access voter information, polling booths, and municipal issue tracking.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppTheme.textSecondary,
-                        height: 1.35,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Dev Mode Demo Quick Fill Helper Banner
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: AppTheme.surfaceMuted,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: AppTheme.borderSubtle),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.code_rounded, size: 16, color: AppTheme.primaryNavy),
-                          const SizedBox(width: 8),
-                          const Expanded(
-                            child: Text(
-                              'Demo Mode Active (Offline Mock / Viva Ready)',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppTheme.textSecondary),
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: _fillSampleCredentials,
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: const Text('Quick Fill', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: AppSpacing.xxl),
 
                     // Email Field
                     const Text(
-                      'Email Address',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                      'Email',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                     ),
                     const SizedBox(height: 6),
                     TextFormField(
@@ -176,17 +108,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       validator: Validators.email,
-                      decoration: const InputDecoration(
-                        hintText: 'citizen@example.org',
-                        prefixIcon: Icon(Icons.email_outlined, size: 18, color: AppTheme.textMuted),
+                      style: const TextStyle(fontSize: 13.5),
+                      decoration: InputDecoration(
+                        hintText: 'Enter your registered email address',
+                        prefixIcon: const Icon(Icons.email_outlined, size: 18, color: AppColors.textMuted),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.md),
 
                     // Password Field
                     const Text(
                       'Password',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                     ),
                     const SizedBox(height: 6),
                     TextFormField(
@@ -195,14 +130,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) => _handleLogin(),
                       validator: Validators.password,
+                      style: const TextStyle(fontSize: 13.5),
                       decoration: InputDecoration(
-                        hintText: 'Enter your account password',
-                        prefixIcon: const Icon(Icons.lock_outline, size: 18, color: AppTheme.textMuted),
+                        hintText: 'Enter your password',
+                        prefixIcon: const Icon(Icons.lock_outline, size: 18, color: AppColors.textMuted),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                             size: 18,
-                            color: AppTheme.textMuted,
+                            color: AppColors.textMuted,
                           ),
                           onPressed: () {
                             setState(() {
@@ -210,11 +146,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             });
                           },
                         ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
 
-                    // Forgot Password
+                    // Forgot Password Link
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
@@ -231,29 +169,21 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: const Text(
                           'Forgot Password?',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.primaryNavy),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: AppSpacing.lg),
 
-                    // Login Button
-                    FilledButton(
-                      onPressed: auth.isLoading ? null : _handleLogin,
-                      child: auth.isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Text('Login to CivicVoice'),
+                    // Login Action Button
+                    AppButton(
+                      label: 'Login',
+                      isLoading: auth.isLoading,
+                      onPressed: _handleLogin,
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: AppSpacing.md),
 
-                    // Create Account Button
+                    // Create Citizen Account
                     OutlinedButton(
                       onPressed: auth.isLoading
                           ? null
@@ -263,19 +193,91 @@ class _LoginScreenState extends State<LoginScreen> {
                                 MaterialPageRoute(builder: (_) => const RegisterScreen()),
                               );
                             },
-                      child: const Text('Create New Account'),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.borderMedium),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text(
+                        'Create Citizen Account',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryNavy),
+                      ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpacing.xl),
 
-                    // Privacy and Terms Note
+                    // Discreet Demo Quick-Fill Bar for Viva Evaluation
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceSubtle,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.borderSubtle),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Demo Testing Accounts (One-tap fill)',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () => _fillCredentials('citizen@civicvoice.org', 'password123'),
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surfaceWhite,
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: AppColors.borderSubtle),
+                                    ),
+                                    child: const Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Citizen Role', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primaryNavy)),
+                                        Text('citizen@civicvoice.org', style: TextStyle(fontSize: 9.5, color: AppColors.textMuted)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () => _fillCredentials('admin@civicvoice.org', 'password123'),
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surfaceWhite,
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: AppColors.borderSubtle),
+                                    ),
+                                    child: const Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Civic Authority', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.secondaryTeal)),
+                                        Text('admin@civicvoice.org', style: TextStyle(fontSize: 9.5, color: AppColors.textMuted)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+
                     const Center(
                       child: Text(
-                        'By signing in, you agree to public citizen data usage guidelines.',
+                        'Public civic information and municipal governance platform.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppTheme.textMuted,
-                        ),
+                        style: AppTextStyles.metadata,
                       ),
                     ),
                   ],

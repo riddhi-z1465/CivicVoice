@@ -224,30 +224,30 @@ class _MapPlaceholderWidgetState extends State<MapPlaceholderWidget> {
         // Selected Booth Floating Bottom Card
         if (widget.selectedBooth != null)
           Positioned(
-            left: 14,
-            right: 14,
-            bottom: 14,
-            child: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: const BorderSide(color: AppTheme.borderSubtle),
+            left: AppSpacing.md,
+            right: AppSpacing.md,
+            bottom: AppSpacing.md,
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.surfaceWhite,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.borderSubtle),
+                boxShadow: AppTheme.cardShadow,
               ),
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppTheme.accentGreenLight,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(7),
+                        decoration: BoxDecoration(
+                          color: AppColors.secondaryContainer,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
                           child: const Icon(
                             Icons.where_to_vote,
                             color: AppTheme.accentGreen,
@@ -332,9 +332,8 @@ class _MapPlaceholderWidgetState extends State<MapPlaceholderWidget> {
                 ),
               ),
             ),
-          ),
-      ],
-    );
+        ],
+      );
   }
 
   Widget _mapControlBtn({required IconData icon, required String tooltip, required VoidCallback onPressed}) {

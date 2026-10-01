@@ -17,7 +17,7 @@ class AuthService {
   UserProfile? _currentUser;
   bool _isDevMockMode = false; // Live Firebase active by default!
 
-  // In-memory mock citizen accounts for offline demo fallback
+  // In-memory mock accounts for offline demo fallback (Citizen & Civic Authority)
   final Map<String, Map<String, dynamic>> _mockUserDatabase = {
     'citizen@civicvoice.org': {
       'password': 'password123',
@@ -26,9 +26,23 @@ class AuthService {
         name: 'Aarav Patel',
         email: 'citizen@civicvoice.org',
         phone: '9876543210',
+        role: 'citizen',
         constituency: 'North Central Ward 12',
         epicNumber: 'XYZ-2026-90412',
         registeredAt: DateTime(2025, 8, 15),
+      ),
+    },
+    'admin@civicvoice.org': {
+      'password': 'password123',
+      'profile': UserProfile(
+        uid: 'admin-demo-01',
+        name: 'Riddhi Zunjarrao',
+        email: 'admin@civicvoice.org',
+        phone: '9820098200',
+        role: 'admin',
+        constituency: 'Municipal Administration - Ward 12 & All Wards',
+        epicNumber: 'ADM-2026-HQ01',
+        registeredAt: DateTime(2025, 1, 1),
       ),
     },
   };
@@ -55,13 +69,16 @@ class AuthService {
         if (doc.exists && doc.data() != null) {
           _currentUser = UserProfile.fromMap(doc.data()!, id: fbUser.uid);
         } else {
+          final email = fbUser.email ?? '';
+          final isAdminUser = email.toLowerCase().contains('admin');
           _currentUser = UserProfile(
             uid: fbUser.uid,
-            name: fbUser.displayName ?? _extractNameFromEmail(fbUser.email ?? 'citizen@example.org'),
-            email: fbUser.email ?? '',
+            name: fbUser.displayName ?? _extractNameFromEmail(email.isNotEmpty ? email : 'citizen@example.org'),
+            email: email,
             phone: fbUser.phoneNumber ?? '9876543210',
-            constituency: 'North Central Ward 12',
-            epicNumber: 'EPIC-${fbUser.uid.substring(0, 6).toUpperCase()}',
+            role: isAdminUser ? 'admin' : 'citizen',
+            constituency: isAdminUser ? 'Municipal Administration' : 'North Central Ward 12',
+            epicNumber: isAdminUser ? 'ADM-${fbUser.uid.substring(0, 6).toUpperCase()}' : 'EPIC-${fbUser.uid.substring(0, 6).toUpperCase()}',
             registeredAt: DateTime.now(),
           );
         }
@@ -78,6 +95,10 @@ class AuthService {
   }) async {
     final normalizedEmail = email.trim().toLowerCase();
 
+    // Check if this is a known demo testing account with matching credentials
+    final isDemoAccount = _mockUserDatabase.containsKey(normalizedEmail) &&
+        _mockUserDatabase[normalizedEmail]!['password'] == password;
+
     // 1. Try Firebase Authentication first if available
     if (CivicFirebaseService.isInitialized && !_isDevMockMode) {
       try {
@@ -88,48 +109,66 @@ class AuthService {
 
         final uid = credential.user!.uid;
 
-        // Fetch citizen profile from Firestore
+        // Fetch user profile from Firestore
         final doc = await _firestore.collection(CivicFirebaseService.colUsers).doc(uid).get();
         if (doc.exists && doc.data() != null) {
           _currentUser = UserProfile.fromMap(doc.data()!, id: uid);
         } else {
+          final isAdminUser = normalizedEmail.contains('admin');
           // If Firestore profile doesn't exist yet, create baseline document
           _currentUser = UserProfile(
             uid: uid,
             name: credential.user!.displayName ?? _extractNameFromEmail(normalizedEmail),
             email: normalizedEmail,
             phone: credential.user!.phoneNumber ?? '9876543210',
-            constituency: 'North Central Ward 12',
-            epicNumber: 'EPIC-${uid.substring(0, 6).toUpperCase()}',
+            role: isAdminUser ? 'admin' : 'citizen',
+            constituency: isAdminUser ? 'Municipal Administration' : 'North Central Ward 12',
+            epicNumber: isAdminUser ? 'ADM-${uid.substring(0, 6).toUpperCase()}' : 'EPIC-${uid.substring(0, 6).toUpperCase()}',
             registeredAt: DateTime.now(),
           );
-          await _firestore.collection(CivicFirebaseService.colUsers).doc(uid).set(_currentUser!.toMap());
+          try {
+            await _firestore.collection(CivicFirebaseService.colUsers).doc(uid).set(_currentUser!.toMap());
+          } catch (_) {}
         }
 
         return _currentUser!;
       } on FirebaseAuthException catch (e) {
-        // Human-friendly error translation
+        // If it's a demo account, auto-provision in Firebase or gracefully fall back
+        if (isDemoAccount) {
+          try {
+            final newCred = await _firebaseAuth.createUserWithEmailAndPassword(
+              email: normalizedEmail,
+              password: password,
+            );
+            final uid = newCred.user!.uid;
+            final mockProfile = _mockUserDatabase[normalizedEmail]!['profile'] as UserProfile;
+            final liveProfile = mockProfile.copyWith(uid: uid);
+            try {
+              await _firestore.collection(CivicFirebaseService.colUsers).doc(uid).set(liveProfile.toMap());
+            } catch (_) {}
+            _currentUser = liveProfile;
+            return liveProfile;
+          } catch (_) {
+            _currentUser = _mockUserDatabase[normalizedEmail]!['profile'] as UserProfile;
+            return _currentUser!;
+          }
+        }
+
+        // Human-friendly error translation for other accounts
         if (e.code == 'user-not-found') {
-          throw Exception('No registered citizen account found with this email.');
+          throw Exception('No registered account found with this email.');
         } else if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
           throw Exception('Incorrect password. Please verify your credentials.');
         } else if (e.code == 'invalid-email') {
           throw Exception('The email address format is not valid.');
         } else if (e.code == 'user-disabled') {
-          throw Exception('This citizen account has been deactivated.');
+          throw Exception('This account has been deactivated.');
         } else {
-          // If offline or network issue and demo email used, fallback gracefully
-          if (_mockUserDatabase.containsKey(normalizedEmail) &&
-              _mockUserDatabase[normalizedEmail]!['password'] == password) {
-            _currentUser = _mockUserDatabase[normalizedEmail]!['profile'] as UserProfile;
-            return _currentUser!;
-          }
           throw Exception(e.message ?? 'Authentication failed. Please try again.');
         }
       } catch (e) {
-        // Fallback for demo mock account during network outages
-        if (_mockUserDatabase.containsKey(normalizedEmail) &&
-            _mockUserDatabase[normalizedEmail]!['password'] == password) {
+        // Fallback for demo mock account during network outages or other exceptions
+        if (isDemoAccount) {
           _currentUser = _mockUserDatabase[normalizedEmail]!['profile'] as UserProfile;
           return _currentUser!;
         }
@@ -144,16 +183,18 @@ class AuthService {
         _currentUser = userData['profile'] as UserProfile;
         return _currentUser!;
       } else {
-        throw Exception('Incorrect password. Please verify and try again.');
+        throw Exception('Incorrect password. Please verify your credentials.');
       }
     } else {
+      final isAdminUser = normalizedEmail.contains('admin');
       final newProfile = UserProfile(
         uid: 'uid-${DateTime.now().millisecondsSinceEpoch}',
         name: _extractNameFromEmail(normalizedEmail),
         email: normalizedEmail,
         phone: '9820001122',
-        constituency: 'North Central Ward 12',
-        epicNumber: 'EPIC-${(100000 + DateTime.now().millisecond * 37)}',
+        role: isAdminUser ? 'admin' : 'citizen',
+        constituency: isAdminUser ? 'Municipal Administration' : 'North Central Ward 12',
+        epicNumber: isAdminUser ? 'ADM-${DateTime.now().millisecond}' : 'EPIC-${(100000 + DateTime.now().millisecond * 37)}',
         registeredAt: DateTime.now(),
       );
 
@@ -188,18 +229,22 @@ class AuthService {
         // Update Firebase display name
         await credential.user!.updateDisplayName(name.trim());
 
+        final isAdminUser = normalizedEmail.contains('admin');
         final newProfile = UserProfile(
           uid: uid,
           name: name.trim(),
           email: normalizedEmail,
           phone: phone.trim(),
-          constituency: constituency ?? 'North Central Ward 12',
-          epicNumber: 'EPIC-${uid.substring(0, 6).toUpperCase()}',
+          role: isAdminUser ? 'admin' : 'citizen',
+          constituency: constituency ?? (isAdminUser ? 'Municipal Administration' : 'North Central Ward 12'),
+          epicNumber: isAdminUser ? 'ADM-${uid.substring(0, 6).toUpperCase()}' : 'EPIC-${uid.substring(0, 6).toUpperCase()}',
           registeredAt: DateTime.now(),
         );
 
-        // Save citizen profile in Firestore
-        await _firestore.collection(CivicFirebaseService.colUsers).doc(uid).set(newProfile.toMap());
+        // Save citizen/admin profile in Firestore
+        try {
+          await _firestore.collection(CivicFirebaseService.colUsers).doc(uid).set(newProfile.toMap());
+        } catch (_) {}
 
         _currentUser = newProfile;
         return newProfile;

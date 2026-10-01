@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../models/candidate.dart';
 import '../../providers/candidate_provider.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/civic_card.dart';
+import '../../widgets/candidate_card.dart';
+import '../../widgets/empty_state.dart';
 import '../../widgets/info_banner.dart';
+import '../../widgets/search_field.dart';
 import 'candidate_detail_screen.dart';
 
 class CandidateListScreen extends StatefulWidget {
@@ -25,149 +26,177 @@ class _CandidateListScreenState extends State<CandidateListScreen> {
     super.dispose();
   }
 
+  void _showConstituencyFilterSheet(BuildContext context, CandidateProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
+                  child: Text(
+                    'Select Constituency / Ward',
+                    style: AppTextStyles.sectionTitle,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                const Divider(),
+                ...provider.constituencies.map((constituency) {
+                  final isSelected = provider.selectedConstituency == constituency;
+                  return ListTile(
+                    title: Text(
+                      constituency,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                        color: isSelected ? AppColors.primaryNavy : AppColors.textPrimary,
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? const Icon(Icons.check, size: 18, color: AppColors.primaryNavy)
+                        : null,
+                    onTap: () {
+                      provider.setConstituency(constituency);
+                      Navigator.pop(ctx);
+                    },
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final candidateProv = Provider.of<CandidateProvider>(context);
 
     final content = Column(
       children: [
-        // Search and Constituency Filter Header
+        // Top Search and Filter Bar
         Container(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
-          color: AppTheme.surfaceWhite,
+          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.sm + 2),
+          color: AppColors.surfaceWhite,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextField(
+              CivicSearchField(
                 controller: _searchController,
+                hintText: 'Search candidate name, party, or ward...',
                 onChanged: (val) => candidateProv.setSearchQuery(val),
-                decoration: InputDecoration(
-                  hintText: 'Search candidate name, party, or ward...',
-                  prefixIcon: const Icon(Icons.search, size: 20, color: AppTheme.textMuted),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, size: 18),
-                          onPressed: () {
-                            _searchController.clear();
-                            candidateProv.setSearchQuery('');
-                          },
-                        )
-                      : null,
-                ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.sm),
 
-              // Constituency Dropdown Filter
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceMuted,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: AppTheme.borderSubtle),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.filter_list, size: 16, color: AppTheme.primaryNavy),
-                    const SizedBox(width: 8),
-                    const Text('Ward:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.textSecondary)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          isExpanded: true,
-                          value: candidateProv.selectedConstituency,
-                          style: const TextStyle(fontSize: 12, color: AppTheme.textPrimary, fontWeight: FontWeight.w600),
-                          items: candidateProv.constituencies.map((c) {
-                            return DropdownMenuItem<String>(
-                              value: c,
-                              child: Text(c, overflow: TextOverflow.ellipsis),
-                            );
-                          }).toList(),
-                          onChanged: (val) {
-                            if (val != null) {
-                              candidateProv.setConstituency(val);
-                            }
-                          },
-                        ),
+              // Filter Controls (Constituency pill and filter button)
+              Row(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          ActionChip(
+                            avatar: const Icon(Icons.filter_list, size: 14, color: AppColors.primaryNavy),
+                            label: Text(
+                              candidateProv.selectedConstituency,
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primaryNavy,
+                              ),
+                            ),
+                            backgroundColor: AppColors.primaryContainer,
+                            side: const BorderSide(color: AppColors.borderSubtle),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                            onPressed: () => _showConstituencyFilterSheet(context, candidateProv),
+                          ),
+                          if (candidateProv.selectedConstituency != 'All Constituencies') ...[
+                            const SizedBox(width: AppSpacing.xs),
+                            IconButton(
+                              icon: const Icon(Icons.clear, size: 14, color: AppColors.textMuted),
+                              tooltip: 'Reset to all constituencies',
+                              constraints: const BoxConstraints(),
+                              padding: const EdgeInsets.all(4),
+                              onPressed: () => candidateProv.setConstituency('All Constituencies'),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  Text(
+                    '${candidateProv.candidates.length} Contesting',
+                    style: AppTextStyles.metadata,
+                  ),
+                ],
               ),
             ],
           ),
         ),
         const Divider(height: 1),
 
-        // List Area
+        // Candidate List Area
         Expanded(
           child: candidateProv.isLoading
               ? const Center(child: CircularProgressIndicator())
               : RefreshIndicator(
                   onRefresh: () => candidateProv.loadCandidates(),
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-                    children: [
-                      // Mandatory Neutrality Notice
-                      const InfoBanner(
-                        text:
-                            'Notice: Public candidate information is displayed strictly for factual transparency without ranking, voting recommendations, or endorsements. Source: Sample Election Commission Affidavit Records.',
-                        type: BannerType.sampleData,
-                      ),
-                      const SizedBox(height: 14),
-
-                      if (candidateProv.candidates.isEmpty)
-                        Container(
-                          padding: const EdgeInsets.all(32),
-                          alignment: Alignment.center,
-                          child: const Column(
-                            children: [
-                              Icon(Icons.person_search, size: 44, color: AppTheme.textMuted),
-                              SizedBox(height: 10),
-                              Text(
-                                'No candidates match your criteria',
-                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textSecondary),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Try clearing search or switching to "All Constituencies"',
-                                style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                              ),
-                            ],
-                          ),
-                        )
-                      else ...[
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: candidateProv.candidates.isEmpty
+                      ? ListView(
                           children: [
-                            Text(
-                              'Contesting Candidates (${candidateProv.candidates.length})',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.textPrimary,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppTheme.surfaceMuted,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                'Form 26 Affidavits',
-                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.textMuted),
-                              ),
+                            const SizedBox(height: AppSpacing.xxl),
+                            EmptyState(
+                              icon: Icons.person_search_outlined,
+                              title: 'No candidates match your search',
+                              description: 'Try clearing your search query or reset the constituency filter.',
+                              actionLabel: 'Reset Filters',
+                              onAction: () {
+                                _searchController.clear();
+                                candidateProv.setSearchQuery('');
+                                candidateProv.setConstituency('All Constituencies');
+                              },
                             ),
                           ],
-                        ),
-                        const SizedBox(height: 10),
+                        )
+                      : ListView(
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                          children: [
+                            // Neutrality Transparency Notice
+                            const InfoBanner(
+                              text:
+                                  'Candidate profiles are published strictly for democratic transparency. CivicVoice does not rank, score, endorse, or recommend candidates.',
+                              type: BannerType.sampleData,
+                            ),
+                            const SizedBox(height: AppSpacing.md),
 
-                        ...candidateProv.candidates.map((candidate) {
-                          return _buildCandidateCard(context, candidate);
-                        }),
-                      ],
-                    ],
-                  ),
+                            ...candidateProv.candidates.map((candidate) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                                child: CandidateCard(
+                                  candidate: candidate,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => CandidateDetailScreen(candidate: candidate),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
                 ),
         ),
       ],
@@ -178,167 +207,15 @@ class _CandidateListScreenState extends State<CandidateListScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Candidate Public Profiles'),
+        title: const Text('Candidates'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppTheme.borderSubtle, height: 1),
+          child: Container(color: AppColors.borderSubtle, height: 1),
         ),
       ),
       body: SafeArea(child: content),
-    );
-  }
-
-  Widget _buildCandidateCard(BuildContext context, Candidate candidate) {
-    final initials = candidate.name
-        .split(' ')
-        .where((p) => p.isNotEmpty && !p.startsWith('Dr.'))
-        .map((p) => p[0])
-        .take(2)
-        .join();
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: CivicCard(
-        padding: const EdgeInsets.all(14),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => CandidateDetailScreen(candidate: candidate),
-            ),
-          );
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Clean photo placeholder with initials
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryNavy.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.primaryNavy.withValues(alpha: 0.15)),
-                  ),
-                  child: Center(
-                    child: Text(
-                      initials.isNotEmpty ? initials : 'CD',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.primaryNavy,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-
-                // Name, Constituency, and Party
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              candidate.name,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.textPrimary,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppTheme.accentGreenLight,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text(
-                              'VERIFIED FILING',
-                              style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.accentGreen,
-                                letterSpacing: 0.4,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        candidate.party,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.primaryNavy,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.location_on_outlined, size: 13, color: AppTheme.textMuted),
-                          const SizedBox(width: 3),
-                          Expanded(
-                            child: Text(
-                              candidate.constituency,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: AppTheme.textMuted,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            'Age: ${candidate.age} yrs',
-                            style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            const Divider(height: 1),
-            const SizedBox(height: 10),
-
-            // Education & View Profile action
-            Row(
-              children: [
-                const Icon(Icons.school_outlined, size: 14, color: AppTheme.textMuted),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    candidate.education,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  'View Profile',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.primaryNavy),
-                ),
-                const SizedBox(width: 2),
-                const Icon(Icons.chevron_right, size: 16, color: AppTheme.primaryNavy),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

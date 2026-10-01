@@ -12,6 +12,9 @@ class AuthProvider extends ChangeNotifier {
 
   UserProfile? get user => _user;
   bool get isAuthenticated => _user != null;
+  bool get isAdmin => _user?.isAdmin ?? false;
+  bool get isCitizen => !isAdmin;
+  String get userRole => _user?.role ?? 'citizen';
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isDevMockMode => _authService.isDevMockMode;

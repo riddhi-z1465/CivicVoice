@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/voter_info.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/info_banner.dart';
+import '../../widgets/section_header.dart';
 
 class VoterDetailScreen extends StatelessWidget {
   final VoterInfo guide;
@@ -11,17 +12,17 @@ class VoterDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(guide.name),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppTheme.borderSubtle, height: 1),
+          child: Container(color: AppColors.borderSubtle, height: 1),
         ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -29,9 +30,9 @@ class VoterDetailScreen extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryNavy.withValues(alpha: 0.08),
+                      color: AppColors.primaryContainer,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -39,110 +40,92 @@ class VoterDetailScreen extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.primaryNavy,
+                        color: AppColors.primaryNavy,
                         letterSpacing: 0.5,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 guide.name,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.textPrimary,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.2,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
 
               // Overview Card
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: AppTheme.surfaceWhite,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.borderSubtle),
+                  color: AppColors.surfaceWhite,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.borderSubtle),
+                  boxShadow: AppTheme.subtleShadow,
                 ),
                 child: Text(
                   guide.summary,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppTheme.textSecondary,
-                    height: 1.4,
-                  ),
+                  style: AppTextStyles.body,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.xl),
 
               // Eligibility
               if (guide.eligibility.isNotEmpty) ...[
-                const Text(
-                  'Statutory Eligibility',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
-                  ),
+                const SectionHeader(
+                  title: 'Statutory Eligibility',
+                  subtitle: 'Legal qualification required for this procedure',
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.xs),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: AppTheme.surfaceWhite,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.borderSubtle),
+                    color: AppColors.surfaceWhite,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.borderSubtle),
                   ),
                   child: Text(
                     guide.eligibility,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppTheme.textSecondary,
-                      height: 1.4,
-                    ),
+                    style: AppTextStyles.body,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.xl),
               ],
 
               // Required Documents
               if (guide.documents.isNotEmpty) ...[
-                const Text(
-                  'Mandatory Supporting Documents',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
-                  ),
+                const SectionHeader(
+                  title: 'Required Supporting Documents',
+                  subtitle: 'Documents accepted by the Electoral Registration Officer',
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.xs),
                 Container(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: AppTheme.surfaceWhite,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.borderSubtle),
+                    color: AppColors.surfaceWhite,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.borderSubtle),
                   ),
                   child: Column(
                     children: guide.documents.map((doc) {
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
+                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.check_circle_outline, size: 16, color: AppTheme.accentGreen),
-                            const SizedBox(width: 8),
+                            const Icon(Icons.check_circle_outline, size: 16, color: AppColors.secondaryTeal),
+                            const SizedBox(width: AppSpacing.sm),
                             Expanded(
                               child: Text(
                                 doc,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppTheme.textSecondary,
-                                  height: 1.3,
-                                ),
+                                style: AppTextStyles.body,
                               ),
                             ),
                           ],
@@ -151,41 +134,37 @@ class VoterDetailScreen extends StatelessWidget {
                     }).toList(),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.xl),
               ],
 
               // Procedural Steps
               if (guide.steps.isNotEmpty) ...[
-                const Text(
-                  'Application Procedure',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
-                  ),
+                const SectionHeader(
+                  title: 'Step-by-Step Procedure',
+                  subtitle: 'Official process for submission and verification',
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.xs),
                 Container(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: AppTheme.surfaceWhite,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.borderSubtle),
+                    color: AppColors.surfaceWhite,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.borderSubtle),
                   ),
                   child: Column(
                     children: List.generate(guide.steps.length, (idx) {
                       final stepText = guide.steps[idx];
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 10.0),
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
-                              width: 20,
-                              height: 20,
+                              width: 22,
+                              height: 22,
                               decoration: BoxDecoration(
-                                color: AppTheme.primaryNavy,
-                                borderRadius: BorderRadius.circular(4),
+                                color: AppColors.primaryNavy,
+                                borderRadius: BorderRadius.circular(5),
                               ),
                               child: Center(
                                 child: Text(
@@ -198,15 +177,11 @@ class VoterDetailScreen extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: AppSpacing.sm + 2),
                             Expanded(
                               child: Text(
                                 stepText,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppTheme.textSecondary,
-                                  height: 1.35,
-                                ),
+                                style: AppTextStyles.body,
                               ),
                             ),
                           ],
@@ -215,76 +190,68 @@ class VoterDetailScreen extends StatelessWidget {
                     }),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.xl),
               ],
 
               // Official Portals & Sources
               if (guide.officialLinks.isNotEmpty) ...[
-                const Text(
-                  'Verified Official Source Portals',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
-                  ),
+                const SectionHeader(
+                  title: 'Official Portals',
+                  subtitle: 'Government authorized links for online filing',
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.xs),
                 ...guide.officialLinks.map((link) {
                   return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF0FDF4),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFBBF7D0)),
+                      color: AppColors.surfaceWhite,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.secondaryTeal.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.verified, size: 20, color: AppTheme.accentGreen),
-                        const SizedBox(width: 10),
+                        const Icon(Icons.verified, size: 18, color: AppColors.secondaryTeal),
+                        const SizedBox(width: AppSpacing.sm + 2),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 link.label,
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                                style: AppTextStyles.cardTitle,
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 link.authorityName,
-                                style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                                style: AppTextStyles.metadata,
                               ),
                             ],
                           ),
                         ),
-                        const Icon(Icons.open_in_new, size: 16, color: AppTheme.accentGreen),
+                        const Icon(Icons.open_in_new, size: 15, color: AppColors.secondaryTeal),
                       ],
                     ),
                   );
                 }),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.xl),
               ],
 
               // FAQs
               if (guide.faqs.isNotEmpty) ...[
-                const Text(
-                  'Frequently Asked Questions',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
-                  ),
+                const SectionHeader(
+                  title: 'Frequently Asked Questions',
+                  subtitle: 'Common citizen queries answered',
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.xs),
                 ...guide.faqs.map((faq) {
                   return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: AppTheme.surfaceWhite,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppTheme.borderSubtle),
+                      color: AppColors.surfaceWhite,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.borderSubtle),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,23 +261,19 @@ class VoterDetailScreen extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.primaryNavy,
+                            color: AppColors.primaryNavy,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           faq.answer,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textSecondary,
-                            height: 1.35,
-                          ),
+                          style: AppTextStyles.supporting.copyWith(color: AppColors.textSecondary),
                         ),
                       ],
                     ),
                   );
                 }),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
               ],
 
               const InfoBanner(
@@ -318,7 +281,7 @@ class VoterDetailScreen extends StatelessWidget {
                     'Statutory Disclaimer: Information provided in CivicVoice is for educational demonstration. Official notifications and statutory guidelines published by the Election Commission prevail.',
                 type: BannerType.sampleData,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.xxl),
             ],
           ),
         ),

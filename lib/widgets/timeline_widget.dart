@@ -3,7 +3,14 @@ import '../models/civic_report.dart';
 import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
 
-/// Clean, simple lifecycle timeline for civic issue tracking
+/// Clean, vertical status presentation with step dots & connectors:
+/// ● Submitted
+/// │
+/// ● Under Review
+/// │
+/// ○ In Progress
+/// │
+/// ○ Resolved
 class ReportTimelineWidget extends StatelessWidget {
   final List<ReportStatusLog> history;
   final String currentStatus;
@@ -44,96 +51,147 @@ class ReportTimelineWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Horizontal progress step indicator
-        Row(
-          children: List.generate(standardStages.length * 2 - 1, (index) {
-            if (index.isOdd) {
-              // Connector Line
-              final stepBefore = index ~/ 2;
-              final isPassed = stepBefore < activeIndex;
-              return Expanded(
-                child: Container(
-                  height: 2,
-                  color: isPassed ? AppTheme.accentGreen : AppTheme.borderSubtle,
-                ),
-              );
-            } else {
-              // Step Dot
-              final stepIndex = index ~/ 2;
-              final isReached = stepIndex <= activeIndex;
+        // Vertical Step Timeline
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xs),
+          child: Column(
+            children: List.generate(standardStages.length, (index) {
+              final stage = standardStages[index];
+              final isCompleted = index < activeIndex;
+              final isCurrent = index == activeIndex;
+              final isReached = index <= activeIndex;
+              final isLast = index == standardStages.length - 1;
 
-              return Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isReached ? AppTheme.accentGreen : Colors.white,
-                  border: Border.all(
-                    color: isReached ? AppTheme.accentGreen : AppTheme.borderMedium,
-                    width: 2,
-                  ),
-                ),
-                child: Center(
-                  child: isReached
-                      ? const Icon(Icons.check, size: 14, color: Colors.white)
-                      : Text(
-                          '${stepIndex + 1}',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.textMuted,
+              // Find timestamp if reached
+              String? stageTime;
+              for (final log in history) {
+                if (log.status.toLowerCase() == stage.toLowerCase()) {
+                  stageTime = Formatters.formatDateTime(log.timestamp);
+                  break;
+                }
+              }
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Dot and vertical connector
+                  Column(
+                    children: [
+                      Container(
+                        width: 18,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isReached ? AppColors.secondaryTeal : Colors.white,
+                          border: Border.all(
+                            color: isReached ? AppColors.secondaryTeal : AppColors.borderMedium,
+                            width: 2,
                           ),
                         ),
-                ),
+                        child: Center(
+                          child: isCompleted
+                              ? const Icon(Icons.check, size: 11, color: Colors.white)
+                              : isCurrent
+                                  ? Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : null,
+                        ),
+                      ),
+                      if (!isLast)
+                        Container(
+                          width: 2,
+                          height: 28,
+                          color: isCompleted ? AppColors.secondaryTeal : AppColors.borderSubtle,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+
+                  // Stage Label & Status
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                stage,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: isCurrent
+                                      ? FontWeight.w700
+                                      : (isReached ? FontWeight.w600 : FontWeight.normal),
+                                  color: isReached ? AppColors.textPrimary : AppColors.textMuted,
+                                ),
+                              ),
+                              if (isCurrent)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.secondaryContainer,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    'CURRENT STAGE',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.secondaryDark,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          if (stageTime != null) ...[
+                            const SizedBox(height: 1),
+                            Text(
+                              stageTime,
+                              style: AppTextStyles.metadata,
+                            ),
+                          ],
+                          if (!isLast) const SizedBox(height: 12),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               );
-            }
-          }),
-        ),
-        const SizedBox(height: 8),
-
-        // Stage labels
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: standardStages.map((stage) {
-            final isReached = _getStageIndex(stage) <= activeIndex;
-            return Expanded(
-              child: Text(
-                stage,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: isReached ? FontWeight.w600 : FontWeight.normal,
-                  color: isReached ? AppTheme.textPrimary : AppTheme.textMuted,
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 20),
-
-        // Detailed audit log entries
-        const Text(
-          'Status History & Officer Remarks',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+            }),
           ),
         ),
-        const SizedBox(height: 10),
+
+        const SizedBox(height: AppSpacing.lg),
+        const Divider(height: 1),
+        const SizedBox(height: AppSpacing.md),
+
+        // Status History & Officer Remarks
+        const Text(
+          'Official History & Remarks',
+          style: AppTextStyles.cardTitle,
+        ),
+        const SizedBox(height: AppSpacing.sm),
         ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: history.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 10),
+          separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm),
           itemBuilder: (context, index) {
             final log = history[history.length - 1 - index]; // latest first
             return Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: AppTheme.surfaceMuted,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: AppTheme.borderSubtle),
+                color: AppColors.surfaceMuted,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.borderSubtle),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,15 +204,12 @@ class ReportTimelineWidget extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.primaryNavy,
+                          color: AppColors.primaryNavy,
                         ),
                       ),
                       Text(
                         Formatters.formatDateTime(log.timestamp),
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppTheme.textMuted,
-                        ),
+                        style: AppTextStyles.metadata,
                       ),
                     ],
                   ),
@@ -162,11 +217,7 @@ class ReportTimelineWidget extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       log.remarks,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.textSecondary,
-                        height: 1.3,
-                      ),
+                      style: AppTextStyles.supporting.copyWith(color: AppColors.textSecondary),
                     ),
                   ],
                 ],

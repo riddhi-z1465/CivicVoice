@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../theme/app_theme.dart';
+import 'admin/admin_navigation.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'voter_info/voter_info_screen.dart';
 import 'candidates/candidate_list_screen.dart';
 import 'polling_booths/polling_booth_screen.dart';
 import 'reports/my_reports_screen.dart';
 import 'profile/profile_screen.dart';
+import 'auth/login_screen.dart';
 
-class MainNavigationScreen extends StatefulWidget {
+/// Role-aware navigation entry: routes to AdminNavigation or CitizenNavigation
+/// based on the authenticated user's role from Firestore/Auth.
+class MainNavigationScreen extends StatelessWidget {
   final int initialIndex;
 
   const MainNavigationScreen({
@@ -15,10 +22,35 @@ class MainNavigationScreen extends StatefulWidget {
   });
 
   @override
-  State<MainNavigationScreen> createState() => MainNavigationScreenState();
+  Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
+
+    if (!auth.isAuthenticated) {
+      return const LoginScreen();
+    }
+
+    if (auth.isAdmin) {
+      return AdminNavigation(initialIndex: initialIndex);
+    }
+
+    return CitizenNavigation(initialIndex: initialIndex);
+  }
 }
 
-class MainNavigationScreenState extends State<MainNavigationScreen> {
+/// Dedicated navigation shell for the Citizen experience
+class CitizenNavigation extends StatefulWidget {
+  final int initialIndex;
+
+  const CitizenNavigation({
+    super.key,
+    this.initialIndex = 0,
+  });
+
+  @override
+  State<CitizenNavigation> createState() => CitizenNavigationState();
+}
+
+class CitizenNavigationState extends State<CitizenNavigation> {
   late int _currentIndex;
 
   @override
@@ -28,9 +60,11 @@ class MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   void switchTab(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
+    if (index >= 0 && index < 4) {
+      setState(() {
+        _currentIndex = index;
+      });
+    }
   }
 
   @override
@@ -48,35 +82,43 @@ class MainNavigationScreenState extends State<MainNavigationScreen> {
         index: _currentIndex,
         children: screens,
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surfaceWhite,
+          border: Border(
+            top: BorderSide(color: AppColors.borderSubtle, width: 1),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.explore_outlined),
-            selectedIcon: Icon(Icons.explore),
-            label: 'Explore',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.assignment_outlined),
-            selectedIcon: Icon(Icons.assignment),
-            label: 'Reports',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
+        ),
+        child: NavigationBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.explore_outlined),
+              selectedIcon: Icon(Icons.explore),
+              label: 'Explore',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.assignment_outlined),
+              selectedIcon: Icon(Icons.assignment),
+              label: 'Reports',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person),
+              label: 'Profile',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -109,14 +151,18 @@ class _ExploreHubScreenState extends State<ExploreHubScreen> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Explore Civic Services'),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Theme.of(context).colorScheme.primary,
-          unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-          indicatorColor: Theme.of(context).colorScheme.primary,
-          labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          labelColor: AppColors.primaryNavy,
+          unselectedLabelColor: AppColors.textMuted,
+          indicatorColor: AppColors.primaryNavy,
+          indicatorWeight: 2.5,
+          indicatorSize: TabBarIndicatorSize.tab,
+          labelStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+          unselectedLabelStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.normal),
           tabs: const [
             Tab(text: 'Voter Info'),
             Tab(text: 'Candidates'),

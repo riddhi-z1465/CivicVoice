@@ -4,6 +4,7 @@ import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/constants.dart';
 import '../../utils/validators.dart';
+import '../../widgets/primary_button.dart';
 import '../main_navigation_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -53,7 +54,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Account created successfully. Welcome to CivicVoice!'),
-          backgroundColor: AppTheme.accentGreen,
+          backgroundColor: AppColors.secondaryTeal,
         ),
       );
       Navigator.pushAndRemoveUntil(
@@ -65,7 +66,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(auth.errorMessage ?? 'Registration failed. Please check inputs.'),
-          backgroundColor: const Color(0xFFDC2626),
+          backgroundColor: AppColors.errorRed,
         ),
       );
     }
@@ -76,22 +77,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final auth = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      backgroundColor: AppTheme.surfaceWhite,
+      backgroundColor: AppColors.surfaceWhite,
       appBar: AppBar(
         title: const Text('Citizen Registration'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppTheme.borderSubtle, height: 1),
+          child: Container(color: AppColors.borderSubtle, height: 1),
         ),
       ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl, vertical: AppSpacing.lg),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 440),
               child: Form(
@@ -104,26 +101,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.textPrimary,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.3,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     const Text(
                       'Register to submit civic issue reports and access localized voter information.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppTheme.textSecondary,
-                        height: 1.35,
-                      ),
+                      style: AppTextStyles.supporting,
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpacing.xl),
 
                     // Full Name
                     const Text(
                       'Full Name',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSpacing.xs),
                     TextFormField(
                       controller: _nameController,
                       textCapitalization: TextCapitalization.words,
@@ -131,17 +125,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       validator: (v) => Validators.requiredField(v, 'Full name'),
                       decoration: const InputDecoration(
                         hintText: 'e.g. Aarav Patel',
-                        prefixIcon: Icon(Icons.person_outline, size: 18, color: AppTheme.textMuted),
+                        prefixIcon: Icon(Icons.person_outline, size: 18, color: AppColors.textMuted),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.md),
 
                     // Email Address
                     const Text(
                       'Email Address',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSpacing.xs),
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
@@ -149,17 +143,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       validator: Validators.email,
                       decoration: const InputDecoration(
                         hintText: 'citizen@example.org',
-                        prefixIcon: Icon(Icons.email_outlined, size: 18, color: AppTheme.textMuted),
+                        prefixIcon: Icon(Icons.email_outlined, size: 18, color: AppColors.textMuted),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.md),
 
-                    // Phone Number
+                    // Mobile Number
                     const Text(
                       'Mobile Number',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSpacing.xs),
                     TextFormField(
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
@@ -167,47 +161,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       validator: Validators.phone,
                       decoration: const InputDecoration(
                         hintText: '10-digit mobile number',
-                        prefixIcon: Icon(Icons.phone_outlined, size: 18, color: AppTheme.textMuted),
+                        prefixIcon: Icon(Icons.phone_outlined, size: 18, color: AppColors.textMuted),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.md),
 
                     // Constituency Dropdown
                     const Text(
                       'Voter Constituency / Municipal Ward',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSpacing.xs),
                     DropdownButtonFormField<String>(
                       initialValue: _selectedConstituency,
                       isExpanded: true,
                       decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.location_city_outlined, size: 18, color: AppTheme.textMuted),
+                        prefixIcon: Icon(Icons.location_city_outlined, size: 18, color: AppColors.textMuted),
                       ),
                       items: AppConstants.sampleConstituencies
                           .where((c) => c != 'All Constituencies')
-                          .map((constituency) {
-                        return DropdownMenuItem<String>(
-                          value: constituency,
-                          child: Text(constituency, style: const TextStyle(fontSize: 13)),
-                        );
-                      }).toList(),
+                          .map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13))))
+                          .toList(),
                       onChanged: (val) {
-                        if (val != null) {
-                          setState(() {
-                            _selectedConstituency = val;
-                          });
-                        }
+                        if (val != null) setState(() => _selectedConstituency = val);
                       },
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.md),
 
                     // Password
                     const Text(
                       'Password',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSpacing.xs),
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
@@ -215,12 +201,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       validator: Validators.password,
                       decoration: InputDecoration(
                         hintText: 'Minimum 6 characters',
-                        prefixIcon: const Icon(Icons.lock_outline, size: 18, color: AppTheme.textMuted),
+                        prefixIcon: const Icon(Icons.lock_outline, size: 18, color: AppColors.textMuted),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                             size: 18,
-                            color: AppTheme.textMuted,
+                            color: AppColors.textMuted,
                           ),
                           onPressed: () {
                             setState(() {
@@ -230,28 +216,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.md),
 
                     // Confirm Password
                     const Text(
                       'Confirm Password',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSpacing.xs),
                     TextFormField(
                       controller: _confirmPasswordController,
                       obscureText: _obscureConfirm,
                       textInputAction: TextInputAction.done,
-                      validator: (v) => Validators.confirmPassword(v, _passwordController.text),
                       onFieldSubmitted: (_) => _handleRegister(),
+                      validator: (v) => Validators.confirmPassword(v, _passwordController.text),
                       decoration: InputDecoration(
                         hintText: 'Re-enter your password',
-                        prefixIcon: const Icon(Icons.lock_outline, size: 18, color: AppTheme.textMuted),
+                        prefixIcon: const Icon(Icons.lock_outline, size: 18, color: AppColors.textMuted),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                             size: 18,
-                            color: AppTheme.textMuted,
+                            color: AppColors.textMuted,
                           ),
                           onPressed: () {
                             setState(() {
@@ -261,31 +247,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpacing.xl),
 
-                    // Submit Registration Button
-                    FilledButton(
-                      onPressed: auth.isLoading ? null : _handleRegister,
-                      child: auth.isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Text('Complete Citizen Registration'),
+                    // Register Button
+                    PrimaryButton(
+                      label: 'Create Account',
+                      isLoading: auth.isLoading,
+                      onPressed: _handleRegister,
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: AppSpacing.md),
 
                     // Back to Login
                     Center(
                       child: TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('Already have an account? Sign In'),
+                        child: const Text('Already have an account? Sign In', style: TextStyle(fontSize: 13)),
                       ),
                     ),
+                    const SizedBox(height: AppSpacing.lg),
                   ],
                 ),
               ),
