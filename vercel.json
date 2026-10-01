@@ -1,6 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "bash vercel-build.sh",
+  "installCommand": "if cd flutter; then git pull && cd .. ; else git clone https://github.com/flutter/flutter.git --depth 1 -b stable; fi && flutter/bin/flutter config --enable-web",
+  "buildCommand": "flutter/bin/flutter build web --release",
   "outputDirectory": "build/web",
   "cleanUrls": true,
   "trailingSlash": false,
